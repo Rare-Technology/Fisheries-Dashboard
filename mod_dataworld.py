@@ -39,3 +39,5 @@ maa = data.dataframes['managed_access_areas']
 # 2           5      15     105    5.0       Amdui
 # 3           6     143     280    6.0       Amlan
 # 4           5      15     105    7.0      Arawai
+maa = maa.dropna()
+maa['ma_id'] = maa['ma_id'].astype(int)

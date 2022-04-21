@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
     country_input, country_select_all,  snu_input, lgu_input, maa_input, apply_button, filters_UI
@@ -7,9 +7,17 @@ from mod_filters import (
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa
 
+external_scripts = [
+    {
+        'src': "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
+        'integrity': "sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p",
+        'crossorigin': "anonymous"
+    }
+]
 external_stylesheets = [
     {
-        'src': 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css',
+        'href': 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css',
+        'rel': 'stylesheet',
         'integrity': 'sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3',
         'crossorigin': 'anonymous'
     }
@@ -23,17 +31,36 @@ app.layout = html.Div(
 )
 
 ### TODO Finish this callback for making a 'select all' checkbox  for country dropdown
-# @app.callback(
-#     Output(country_select_all, 'value'),
-#     Output(country_input, 'value'),
-#     Input(country_select_all, 'value'),
-#     Input(country_input, 'value')
-# )
-# def sync_country_select_all(all_countries, sel_country):
-#     ctx = callback_context
-#     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-#     if triggered_id == country_select_all.id:
+@app.callback(
+    Output(country_select_all, 'value'),
+    Output(country_input, 'value'),
+    Input(country_select_all, 'value'),
+    Input(country_input, 'value')
+)
+def sync_country_select_all(all_selected, sel_country):
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    all_countries = list(countries['country_name'])
+    if triggered_id == country_input.id:
+        all_selected = ['Select all'] if set(sel_country) == set(all_countries) else []
+    else:
+        sel_country = all_countries if all_selected else []
+    return all_selected, sel_country
 #
+# @app.callback(
+#     Output("city-checklist", "value"),
+#     Output("all-checklist", "value"),
+#     Input("city-checklist", "value"),
+#     Input("all-checklist", "value"),
+# )
+# def sync_checklists(cities_selected, all_selected):
+#     ctx = callback_context
+#     input_id = ctx.triggered[0]["prop_id"].split(".")[0]
+#     if input_id == "city-checklist":
+#         all_selected = ["All"] if set(cities_selected) == set(options) else []
+#     else:
+#         cities_selected = options if all_selected else []
+#     return cities_selected, all_selected
 
 @app.callback(
     Output(snu_input, 'options'),
@@ -46,8 +73,6 @@ def update_snu_options(sel_country, state_opt_snu, state_sel_snu):
     sel_country_id = countries.query("country_name.isin(@sel_country)")['country_id']
     sel_snu = list(snu.query("country_id.isin(@sel_country_id)")['snu_name'])
 
-    print('options: ', state_opt_snu)
-    print('selected: ', state_sel_snu)
     if set(state_opt_snu) == set(state_sel_snu):
         return sel_snu, sel_snu
     else:
