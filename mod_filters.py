@@ -7,7 +7,11 @@ country_input = dcc.Dropdown(id = 'country-input',
     multi = True
 )
 
-country_select_all = dcc.Checklist(['Select all'], [],id = 'country-select-all', inline = True)
+country_select_all = dcc.Checklist(id = 'country-select-all',
+    options = ['Select all'],
+    value = [],
+    inline = True
+)
 
 country_div = html.Div(children = [
     html.Label('Country'),
@@ -15,15 +19,21 @@ country_div = html.Div(children = [
     country_input
 ])
 
-
 snu_input = dcc.Dropdown(id = 'snu-input',
     options = snu['snu_name'],
     value = snu['snu_name'],
     multi = True
 )
 
+snu_select_all = dcc.Checklist(id = 'snu-select-all',
+    options = ['Select all'],
+    value = [],
+    inline = False
+)
+
 snu_div = html.Div(children = [
     'Subnational Unit',
+    snu_select_all,
     snu_input
 ])
 
@@ -51,4 +61,12 @@ maa_div = html.Div(children = [
 
 apply_button = html.Button(children = 'Apply filters')
 
-filters_UI = [country_div, snu_div, lgu_div, maa_div, apply_button]
+filters_UI = [
+    country_div,
+    html.Br(),
+    snu_div,
+    html.Br(),
+    lgu_div,
+    html.Br(),
+    maa_div,
+    apply_button]

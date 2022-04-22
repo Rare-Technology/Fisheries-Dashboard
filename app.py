@@ -2,10 +2,11 @@
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
-    country_input, country_select_all,  snu_input, lgu_input, maa_input, apply_button, filters_UI
+    country_input, country_select_all, snu_input, snu_select_all, lgu_input, maa_input, apply_button, filters_UI
 )
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa
+from utils_filters import sync_select_all
 
 external_scripts = [
     {
@@ -30,7 +31,6 @@ app.layout = html.Div(
     text_UI
 )
 
-### TODO Finish this callback for making a 'select all' checkbox  for country dropdown
 @app.callback(
     Output(country_select_all, 'value'),
     Output(country_input, 'value'),
@@ -41,57 +41,48 @@ def sync_country_select_all(all_selected, sel_country):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     all_countries = list(countries['country_name'])
-    if triggered_id == country_input.id:
-        all_selected = ['Select all'] if set(sel_country) == set(all_countries) else []
-    else:
-        sel_country = all_countries if all_selected else []
-    return all_selected, sel_country
-#
-# @app.callback(
-#     Output("city-checklist", "value"),
-#     Output("all-checklist", "value"),
-#     Input("city-checklist", "value"),
-#     Input("all-checklist", "value"),
-# )
-# def sync_checklists(cities_selected, all_selected):
-#     ctx = callback_context
-#     input_id = ctx.triggered[0]["prop_id"].split(".")[0]
-#     if input_id == "city-checklist":
-#         all_selected = ["All"] if set(cities_selected) == set(options) else []
-#     else:
-#         cities_selected = options if all_selected else []
-#     return cities_selected, all_selected
+
+    return sync_select_all(all_selected, country_input, sel_country, all_countries, triggered_id)
+
 
 @app.callback(
+    Output(snu_select_all, 'value'),
     Output(snu_input, 'options'),
     Output(snu_input, 'value'),
+    Input(snu_select_all, 'value'),
+    Input(snu_input, 'value'),
     Input(country_input, 'value'),
     State(snu_input, 'options'),
-    State(snu_input, 'value')
 )
-def update_snu_options(sel_country, state_opt_snu, state_sel_snu):
+def update_snu(snu_all_selected, sel_snu, sel_country, state_opt_snu):
+    """
+    This callback will handle the following events:
+
+    (1) Country value changes - Update SNU options/values. Don't update values if
+    the user had made changes to selections.
+
+    (2) One of 'Select all' checkbox or SNU selections changes. This produces a
+    circular callback in which:
+        (a) if 'Select all' checkbox changes, update SNU selections accordingly
+        (b) if SNU selections change, update 'Select all' checkbox accordingly
+    """
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     sel_country_id = countries.query("country_name.isin(@sel_country)")['country_id']
-    sel_snu = list(snu.query("country_id.isin(@sel_country_id)")['snu_name'])
+    all_snu = list(snu.query("country_id.isin(@sel_country_id)")['snu_name'])
 
-    if set(state_opt_snu) == set(state_sel_snu):
-        return sel_snu, sel_snu
+    if triggered_id == country_input.id:
+        if set(state_opt_snu) == set(sel_snu):
+            snu_all_selected = ['Select all'] if sel_country != [] else []
+            return snu_all_selected, all_snu, all_snu
+        else:
+            # the user has made changes to the snu selections so don't touch the selected
+            # snu's unless any of them belong to a country no longer selected. Filter those out.
+            keep_snu = [s for s in sel_snu if s in all_snu]
+            return snu_all_selected, all_snu, keep_snu
     else:
-        # the user has made changes to the snu selections so don't touch the selected
-        # snu's unless any of them belong to a country no longer selected. Filter those out.
-        keep_snu = [s for s in state_sel_snu if s in sel_snu]
-        return sel_snu, keep_snu
-
-# @app.callback(
-#     Output(snu_input, 'value'),
-#     Input(snu_input, 'options'),
-#     State(country_input, 'value')
-# )
-# def update_snu_value(snu_opt, sel_country):
-#     sel_country_ud = countries.query("country_name.isin(@sel_country)")['country_id']
-#     sel_snu = snu.query("country_id.isin(@sel_country_id)")['snu_name']
-#     if set() == set(sel_snu): #
-#     return snu_options
-
+        snu_all_selected, sel_snu = sync_select_all(snu_all_selected, snu_input, sel_snu, all_snu, triggered_id)
+        return snu_all_selected, all_snu, sel_snu
 
 if __name__ == '__main__':
     app.run_server(debug=True)
