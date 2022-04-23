@@ -43,8 +43,15 @@ lgu_input = dcc.Dropdown(id = 'lgu-input',
     multi = True
 )
 
+lgu_select_all = dcc.Checklist(id = 'lgu-select-all',
+    options = ['Select all'],
+    value = [],
+    inline = True
+)
+
 lgu_div = html.Div(children = [
     html.Label('Local government unit'),
+    lgu_select_all,
     lgu_input
 ])
 

@@ -2,7 +2,8 @@
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
-    country_input, country_select_all, snu_input, snu_select_all, lgu_input, maa_input, apply_button, filters_UI
+    country_input, country_select_all, snu_input, snu_select_all, lgu_input,
+    lgu_select_all, maa_input, apply_button, filters_UI
 )
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa
@@ -79,10 +80,52 @@ def update_snu(snu_all_selected, sel_snu, sel_country, state_opt_snu):
             # the user has made changes to the snu selections so don't touch the selected
             # snu's unless any of them belong to a country no longer selected. Filter those out.
             keep_snu = [s for s in sel_snu if s in all_snu]
+            snu_all_selected = ['Select all'] if set(keep_snu) == set(all_snu) else []
             return snu_all_selected, all_snu, keep_snu
     else:
         snu_all_selected, sel_snu = sync_select_all(snu_all_selected, snu_input, sel_snu, all_snu, triggered_id)
         return snu_all_selected, all_snu, sel_snu
+
+
+@app.callback(
+    Output(lgu_select_all, 'value'),
+    Output(lgu_input, 'options'),
+    Output(lgu_input, 'value'),
+    Input(lgu_select_all, 'value'),
+    Input(lgu_input, 'value'),
+    Input(snu_input, 'value'),
+    State(lgu_input, 'options'),
+)
+def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu):
+    """
+    This callback will handle the following events:
+
+    (1) SNU value changes - Update LGU options/values. Don't update values if
+    the user had made changes to selections.
+
+    (2) One of 'Select all' checkbox or LGU selections changes. This produces a
+    circular callback in which:
+        (a) if 'Select all' checkbox changes, update LGU selections accordingly
+        (b) if LGU selections change, update 'Select all' checkbox accordingly
+    """
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    sel_snu_id = snu.query("snu_name.isin(@sel_snu)")['snu_id']
+    all_lgu = list(lgu.query("snu_id.isin(@sel_snu_id)")['lgu_name'])
+
+    if triggered_id == snu_input.id:
+        if set(state_opt_lgu) == set(sel_lgu):
+            lgu_all_selected = ['Select all'] if sel_snu != [] else []
+            return lgu_all_selected, all_lgu, all_lgu
+        else:
+            # the user has made changes to the lgu selections so don't touch the selected
+            # lgu's unless any of them belong to a country no longer selected. Filter those out.
+            keep_lgu = [l for l in sel_lgu if l in all_lgu]
+            lgu_all_selected = ['Select all'] if set(keep_lgu) == set(all_lgu) else []
+            return lgu_all_selected, all_lgu, keep_lgu
+    else:
+        lgu_all_selected, sel_lgu = sync_select_all(lgu_all_selected, lgu_input, sel_lgu, all_lgu, triggered_id)
+        return lgu_all_selected, all_lgu, sel_lgu
 
 if __name__ == '__main__':
     app.run_server(debug=True)
