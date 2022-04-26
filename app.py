@@ -3,7 +3,7 @@ from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
-    lgu_select_all, maa_input, apply_button, filters_UI
+    lgu_select_all, maa_input, maa_select_all, apply_button, filters_UI
 )
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa
@@ -39,12 +39,14 @@ app.layout = html.Div(
     Input(country_input, 'value')
 )
 def sync_country_select_all(all_selected, sel_country):
+    """
+    Sync country selections with 'select all' checkbox
+    """
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     all_countries = list(countries['country_name'])
 
     return sync_select_all(all_selected, country_input, sel_country, all_countries, triggered_id)
-
 
 @app.callback(
     Output(snu_select_all, 'value'),
@@ -79,13 +81,13 @@ def update_snu(snu_all_selected, sel_snu, sel_country, state_opt_snu):
         else:
             # the user has made changes to the snu selections so don't touch the selected
             # snu's unless any of them belong to a country no longer selected. Filter those out.
-            keep_snu = [s for s in sel_snu if s in all_snu]
+            diff_snu = [s for s in state_opt_snu if s not in sel_snu] # snu's explicitly de-selected
+            keep_snu = [s for s in all_snu if s not in diff_snu]
             snu_all_selected = ['Select all'] if set(keep_snu) == set(all_snu) else []
             return snu_all_selected, all_snu, keep_snu
     else:
         snu_all_selected, sel_snu = sync_select_all(snu_all_selected, snu_input, sel_snu, all_snu, triggered_id)
         return snu_all_selected, all_snu, sel_snu
-
 
 @app.callback(
     Output(lgu_select_all, 'value'),
@@ -120,12 +122,41 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu):
         else:
             # the user has made changes to the lgu selections so don't touch the selected
             # lgu's unless any of them belong to a country no longer selected. Filter those out.
-            keep_lgu = [l for l in sel_lgu if l in all_lgu]
+            diff_lgu = [l for l in state_opt_lgu if l not in sel_lgu]
+            keep_lgu = [l for l in all_lgu if l not in diff_lgu]
             lgu_all_selected = ['Select all'] if set(keep_lgu) == set(all_lgu) else []
             return lgu_all_selected, all_lgu, keep_lgu
     else:
         lgu_all_selected, sel_lgu = sync_select_all(lgu_all_selected, lgu_input, sel_lgu, all_lgu, triggered_id)
         return lgu_all_selected, all_lgu, sel_lgu
+
+@app.callback(
+    Output(maa_select_all, 'value'),
+    Output(maa_input, 'options'),
+    Output(maa_input, 'value'),
+    Input(maa_select_all, 'value'),
+    Input(maa_input, 'value'),
+    Input(lgu_input, 'value'),
+    State(maa_input, 'options')
+)
+def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    sel_lgu_id = lgu.query("lgu_name.isin(@sel_lgu)")['lgu_id']
+    all_maa = list(maa.query("lgu_id.isin(@sel_lgu_id)")['ma_name'])
+
+    if triggered_id == lgu_input.id:
+        if set(state_opt_maa) == set(sel_maa):
+            maa_all_selected = ['Select all'] if sel_lgu != [] else []
+            return maa_all_selected, all_maa, all_maa
+        else:
+            diff_maa = [m for m in state_opt_maa if m not in sel_maa]
+            keep_maa = [m for m in all_maa if m not in diff_maa]
+            maa_all_selected = ['Select all'] if set(keep_maa) == (all_maa) else []
+            return maa_all_selected, all_maa, keep_maa
+    else:
+        maa_all_selected, sel_maa = sync_select_all(maa_all_selected, maa_input, sel_maa, all_maa, triggered_id)
+        return maa_all_selected, all_maa, sel_maa
 
 if __name__ == '__main__':
     app.run_server(debug=True)
