@@ -7,7 +7,8 @@ from mod_dataworld import countries, snu, lgu, maa
 country_input = dcc.Dropdown(id = 'country-input',
     options = countries['country_name'],
     value = countries['country_name'],
-    multi = True
+    multi = True,
+    clearable = False
 )
 country_select_all = dcc.Checklist(id = 'country-select-all',
     options = ['Select all'],
@@ -24,7 +25,8 @@ country_div = html.Div(children = [
 snu_input = dcc.Dropdown(id = 'snu-input',
     options = [],
     value = [],
-    multi = True
+    multi = True,
+    clearable = False
 )
 snu_select_all = dcc.Checklist(id = 'snu-select-all',
     options = ['Select all'],
@@ -41,7 +43,8 @@ snu_div = html.Div(children = [
 lgu_input = dcc.Dropdown(id = 'lgu-input',
     options = [],
     value = [],
-    multi = True
+    multi = True,
+    clearable = False
 )
 lgu_select_all = dcc.Checklist(id = 'lgu-select-all',
     options = ['Select all'],
@@ -58,7 +61,8 @@ lgu_div = html.Div(children = [
 maa_input = dcc.Dropdown(id = 'maa-input',
     options = [],
     value = [],
-    multi = True
+    multi = True,
+    clearable = False
 )
 maa_select_all = dcc.Checklist(id = 'maa-select-all',
     options = ['Select all'],
