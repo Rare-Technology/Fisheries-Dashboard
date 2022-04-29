@@ -1,6 +1,7 @@
 import requests
 import configparser
 import pandas as pd
+import json
 
 cfg = configparser.ConfigParser(interpolation = None)
 cfg.read('secret.ini')
@@ -24,6 +25,7 @@ QUERY_ID = {
     'avg_catch_value_cpue': "e563dd85-f8b7-497b-b661-5b9f07b51d3d",
     'median_length_catch': "62602629-e3d8-4a3d-98ae-db341b1259ab",
     'export_catch': "b64b8866-308a-417d-8b79-41f3568eec89",
+    'join_fishbase_focal_species': '9315ae27-8978-4525-b77e-e2072fdc10f9'
 }
 
 def get_query(query_name, request_method, params = None):
@@ -89,3 +91,12 @@ maa = get_query('managed_access_areas', 'GET')
 # 4           5      15     105    7.0      Arawai
 maa = maa.dropna()
 maa['ma_id'] = maa['ma_id'].astype(int)
+
+fish = get_query('join_fishbase_focal_species', 'GET')
+# >>> fish.head()
+#    country_id  fishbase_id                species species_local_name  ... is_focal   a   b  lmax
+# 0         NaN         6205  Galaxias tanycephalus               None  ...        0 NaN NaN   NaN
+# 1         NaN        11050      Galaxias zebratus               None  ...        0 NaN NaN   NaN
+# 2         NaN        65787      Galeichthys trowi               None  ...        0 NaN NaN   NaN
+# 3         NaN          808         Galeus murinus               None  ...        0 NaN NaN   NaN
+# 4         NaN        27641        Gambusia beebei               None  ...        0 NaN NaN  5.53

@@ -5,6 +5,7 @@ from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
     lgu_select_all, maa_input, maa_select_all, apply_button, filters_UI
 )
+from mod_plot import plot_div
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa
 from utils_filters import sync_select_all
@@ -27,10 +28,10 @@ external_stylesheets = [
 
 app = Dash(__name__, external_stylesheets = external_stylesheets)
 
-app.layout = html.Div(
-    filters_UI +
-    text_UI
-)
+app.layout = html.Div([
+    html.Div(filters_UI + text_UI),
+    plot_div
+])
 
 @app.callback(
     Output(country_select_all, 'value'),
