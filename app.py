@@ -7,8 +7,9 @@ from mod_filters import (
 )
 from mod_plot import plot_div
 from mod_text import output, text_UI
-from mod_dataworld import countries, snu, lgu, maa
+from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
+
 
 external_scripts = [
     {

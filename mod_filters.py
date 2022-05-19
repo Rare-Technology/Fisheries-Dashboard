@@ -5,8 +5,8 @@ from mod_dataworld import countries, snu, lgu, maa
 ##### (2) find a different dropdown selection similar to ones on FMA tool
 ### Country selection
 country_input = dcc.Dropdown(id = 'country-input',
-    options = countries['country_name'],
-    value = countries['country_name'],
+    options = list(countries['country_name']),
+    value = list(countries['country_name']),
     multi = True,
     clearable = False
 )

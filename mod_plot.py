@@ -1,26 +1,23 @@
 from dash import dcc, html
 import pandas as pd
+import datetime
 import plotly.express as px
-from mod_dataworld import QUERY_ID, HEADERS, get_query, maa, fish
+from mod_dataworld import QUERY_ID, HEADERS, get_data, maa, all_data
 from mod_filters import country_input, snu_input, lgu_input, maa_input
 
-# There's something like 30k unique fish. Using the whole list always ends in a
-# 504 timeout error. DW may still be a bottleneck on dash
-sel_fish = list(fish['fishbase_id'].astype('str').unique())[150:500]
+filter_data = all_data.query(
+    "country.isin(@country_input.value)"
+)
+filter_data['date'] = filter_data['date'].apply(
+    datetime.date.fromisoformat
+).sort_values().apply(
+    lambda x: datetime.date(x.year, x.month, 1)
+)
+filter_data = filter_data[['country', 'date', 'weight_mt']].groupby(
+    by = ['country', 'date']
+).sum().reset_index()
 
-catch_params = {
-    'ma_ids': ','.join(list(maa['ma_id'].astype('str'))),
-    'fishbase_ids': ','.join(sel_fish),
-    'start': '2021-01-01',
-    'end': '2021-12-31'
-}
-catch = get_query('total_catch_per_month', 'POST', catch_params)
-
-# Check the prints... for some reason not all months of 2021 are being captured even though
-# many tests up to this point showed all months. inconsistent responses from API call
-print(catch)
-fig = px.bar(catch, x = 'month', y = 'sum_weight_mt')
-
+fig = px.bar(filter_data, x = 'date', y = 'weight_mt')
 plot = dcc.Graph(id = 'catches-plot', figure = fig)
 
 plot_div = html.Div(children = [
