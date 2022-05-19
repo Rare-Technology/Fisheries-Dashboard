@@ -5,10 +5,12 @@ from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
     lgu_select_all, maa_input, maa_select_all, apply_button, filters_UI
 )
-from mod_plot import plot_div
+from mod_plot import plot, plot_div
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
+import datetime
+import plotly.express as px
 
 
 external_scripts = [
@@ -160,5 +162,23 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
         maa_all_selected, sel_maa = sync_select_all(maa_all_selected, maa_input, sel_maa, all_maa, triggered_id)
         return maa_all_selected, all_maa, sel_maa
 
+@app.callback(
+    Output(plot, 'figure'),
+    Input(apply_button, 'n_clicks'),
+    State(maa_input, 'value'),
+    prevent_initial_call = True
+)
+def update_plot(n_clicks, sel_maa):
+    plot_data = all_data.query(
+        "ma_name.isin(@sel_maa)"
+    ).loc[:,
+        ['Date', 'weight_mt']
+    ].groupby(
+        by = ['Date']
+    ).sum().reset_index()
+
+    fig = px.bar(plot_data, x = 'Date', y = 'weight_mt')
+
+    return fig
 if __name__ == '__main__':
     app.run_server(debug=True)

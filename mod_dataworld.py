@@ -2,7 +2,7 @@ import requests
 import configparser
 import pandas as pd
 import json
-import time
+import datetime
 
 cfg = configparser.ConfigParser(interpolation = None)
 cfg.read('secret.ini')
@@ -63,44 +63,6 @@ def get_data(query_file_name, endpoint, request_method, params = None):
 
     return data
 
-countries = get_data('countries', 'query', 'GET')
-# >>> countries.head()
-#    country_id                    country_name
-# 0           1                          Brazil
-# 1          15  Federated States of Micronesia
-# 2           4                       Guatemala
-# 3           3                        Honduras
-# 4           5                       Indonesia
-
-snu = get_data('subnational_units', 'query', 'GET')
-# >>> snu.head()
-#    country_id  snu_id         snu_name
-# 0           6     145          Antique
-# 1           3      19        Atlántida
-# 2           6     149  Camarines Norte
-# 3           6     148    Camarines Sur
-# 4           6     142             Cebu
-
-lgu = get_data('local_government_units', 'query', 'GET')
-# >>> lgu.head()
-#    country_id  snu_id  lgu_id        lgu_name
-# 0           6     147     331          Alicia
-# 1           6     142     320      Aloguinsan
-# 2           6     143     280           Amlan
-# 3           1      10     343  Augusto Corrêa
-# 4           6     143     285         Ayungon
-
-maa = get_data('managed_access_areas', 'query', 'GET')
-# >>> maa.head()
-#    country_id  snu_id  lgu_id  ma_id     ma_name
-# 0           6     147     331  195.0      Alicia
-# 1           6     142     320    4.0  Aloguinsan
-# 2           5      15     105    5.0       Amdui
-# 3           6     143     280    6.0       Amlan
-# 4           5      15     105    7.0      Arawai
-maa = maa.dropna()
-maa['ma_id'] = maa['ma_id'].astype(int)
-
 all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 # >>> all_data.head()
 #                                      id        date  country_id  snu_id  ...  is_focal         a         b        lmax
@@ -119,12 +81,24 @@ all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 #        'species_scientific', 'species_local', 'is_focal', 'a', 'b', 'lmax'],
 #       dtype='object')
 # Takes approx 15s to get the query result
-# 
-# all_data['date'] = all_data['date'].apply(
-#     datetime.date.fromisoformat
-# ).sort_values().apply(
-#     lambda x: x.strftime("%b %Y")
-# )
-# all_data = all_data[['country', 'date', 'weight_mt']].groupby(
-#     by = ['country', 'date']
-# ).sum().reset_index()
+all_data['Date'] = all_data['date'].apply(
+    datetime.date.fromisoformat
+).apply(
+    lambda x: datetime.date(x.year, x.month, 1)
+)
+
+# countries = get_data('countries', 'query', 'GET')
+countries = all_data[['country_id', 'country']].drop_duplicates().rename(
+    {'country': 'country_name'}, axis = 1
+).reset_index(drop = True)
+
+snu = all_data[['country_id', 'snu_id', 'snu_name']].drop_duplicates().reset_index(drop = True)
+
+lgu = all_data[['country_id', 'snu_id', 'lgu_id', 'lgu_name']].drop_duplicates().reset_index(drop = True)
+
+maa = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'ma_name']].drop_duplicates().reset_index(drop = True)
+### May 19 2022
+# There are 2695 records with a blank ma. Some communities just haven't been assigned one
+# in the MA+R tracker; it is up to country teams to complete their data management.
+maa = maa.dropna()
+maa['ma_id'] = maa['ma_id'].astype(int)
