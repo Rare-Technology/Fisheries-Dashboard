@@ -1,5 +1,6 @@
 from dash import dcc, html
-from mod_dataworld import countries, snu, lgu, maa
+import datetime
+from mod_dataworld import countries, snu, lgu, maa, all_data
 
 ##### TODO figure out how to either (1) limit the amount of selectted options displayed or
 ##### (2) find a different dropdown selection similar to ones on FMA tool
@@ -75,7 +76,25 @@ maa_div = html.Div(children = [
     maa_input
 ])
 
-apply_button = html.Button(children = 'Apply filters')
+min_date = all_data['date'].min()
+max_date = all_data['date'].max()
+if max_date.month > 6:
+    start_date = datetime.date(max_date.year, max_date.month, 1)
+else:
+    start_date = datetime.date(max_date.year - 1, max_date.month + 6, 1)
+
+daterange_input = dcc.DatePickerRange(id='date-range-input',
+        min_date_allowed = min_date,
+        max_date_allowed = max_date,
+        initial_visible_month = max_date,
+        start_date = start_date,
+        end_date = max_date,
+
+    )
+daterange_div = html.Div([
+    html.Label('Date range'),
+    daterange_input
+])
 
 filters_UI = [
     country_div,
@@ -85,4 +104,5 @@ filters_UI = [
     lgu_div,
     html.Br(),
     maa_div,
-    apply_button]
+    html.Br(),
+    daterange_div]

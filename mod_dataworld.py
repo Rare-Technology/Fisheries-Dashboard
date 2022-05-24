@@ -81,11 +81,8 @@ all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 #        'species_scientific', 'species_local', 'is_focal', 'a', 'b', 'lmax'],
 #       dtype='object')
 # Takes approx 15s to get the query result
-all_data['Date'] = all_data['date'].apply(
-    datetime.date.fromisoformat
-).apply(
-    lambda x: datetime.date(x.year, x.month, 1)
-)
+all_data['date'] = all_data['date'].apply(datetime.date.fromisoformat)
+all_data['yearmonth'] = all_data['date'].apply(lambda x: datetime.date(x.year, x.month, 1))
 
 # countries = get_data('countries', 'query', 'GET')
 countries = all_data[['country_id', 'country']].drop_duplicates().rename(

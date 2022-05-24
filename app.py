@@ -3,9 +3,9 @@ from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
-    lgu_select_all, maa_input, maa_select_all, apply_button, filters_UI
+    lgu_select_all, maa_input, maa_select_all, filters_UI
 )
-from mod_plot import plot, plot_div
+from mod_plot import plot, update_button, plot_UI
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
@@ -32,8 +32,11 @@ external_stylesheets = [
 app = Dash(__name__, external_stylesheets = external_stylesheets)
 
 app.layout = html.Div([
-    html.Div(filters_UI + text_UI),
-    plot_div
+    html.Div(
+        filters_UI + text_UI,
+        style = {'width': '49%', 'display': 'inline-block', 'height': '600px', 'overflow-y': 'scroll'}
+    ),
+    plot_UI
 ])
 
 @app.callback(
@@ -164,7 +167,7 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
 
 @app.callback(
     Output(plot, 'figure'),
-    Input(apply_button, 'n_clicks'),
+    Input(update_button, 'n_clicks'),
     State(maa_input, 'value'),
     prevent_initial_call = True
 )
@@ -172,12 +175,12 @@ def update_plot(n_clicks, sel_maa):
     plot_data = all_data.query(
         "ma_name.isin(@sel_maa)"
     ).loc[:,
-        ['Date', 'weight_mt']
+        ['yearmonth', 'weight_mt']
     ].groupby(
-        by = ['Date']
+        by = ['yearmonth']
     ).sum().reset_index()
 
-    fig = px.bar(plot_data, x = 'Date', y = 'weight_mt')
+    fig = px.bar(plot_data, x = 'yearmonth', y = 'weight_mt')
 
     return fig
 if __name__ == '__main__':
