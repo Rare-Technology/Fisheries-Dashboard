@@ -28,6 +28,7 @@ QUERY_ID = {
     'median_length_catch': "62602629-e3d8-4a3d-98ae-db341b1259ab",
     'export_catch': "b64b8866-308a-417d-8b79-41f3568eec89",
     'join_ourfish_footprint_fishbase': "63cec79b-14de-4197-85f0-ee83f9ce16c0",
+    'join_ourfish_footprint': '4f40bdaf-64b0-4d66-b9a9-da967979bb39',
     'join_fishbase_focal_species': '9315ae27-8978-4525-b77e-e2072fdc10f9'
 }
 

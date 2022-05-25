@@ -89,8 +89,7 @@ daterange_input = dcc.DatePickerRange(id='date-range-input',
         initial_visible_month = max_date,
         start_date = start_date,
         end_date = max_date,
-
-    )
+)
 daterange_div = html.Div([
     html.Label('Date range'),
     daterange_input

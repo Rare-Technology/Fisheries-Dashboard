@@ -3,13 +3,15 @@ from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
-    lgu_select_all, maa_input, maa_select_all, filters_UI
+    lgu_select_all, maa_input, maa_select_all, daterange_input, filters_UI
 )
-from mod_plot import plot, update_button, plot_UI
+from mod_plot import catch_plot, cpue_value_plot, update_button, plot_UI
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
 import datetime
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import plotly.express as px
 
 
@@ -150,38 +152,89 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     sel_lgu_id = lgu.query("lgu_name.isin(@sel_lgu)")['lgu_id']
-    all_maa = list(maa.query("lgu_id.isin(@sel_lgu_id)")['ma_name'])
+    all_maa = list(maa.query("lgu_id.isin(@sel_lgu_id)")['ma_id'])
+    all_maa_names = list(maa.query("lgu_id.isin(@sel_lgu_id)")['ma_name'])
+    all_maa_opt_dict = [{'label': m_name, 'value': m} for m_name, m in zip(all_maa_names, all_maa)]
+    state_opt_maa_values = [d['value'] for d in state_opt_maa]
 
     if triggered_id == lgu_input.id:
-        if set(state_opt_maa) == set(sel_maa):
+        if set(state_opt_maa_values) == set(sel_maa):
             maa_all_selected = ['Select all'] if sel_lgu != [] else []
-            return maa_all_selected, all_maa, all_maa
+            return maa_all_selected, all_maa_opt_dict, all_maa
         else:
-            diff_maa = [m for m in state_opt_maa if m not in sel_maa]
+            diff_maa = [m for m in state_opt_maa_values if m not in sel_maa]
             keep_maa = [m for m in all_maa if m not in diff_maa]
-            maa_all_selected = ['Select all'] if set(keep_maa) == (all_maa) else []
-            return maa_all_selected, all_maa, keep_maa
+            maa_all_selected = ['Select all'] if set(keep_maa) == set(all_maa) else []
+            return maa_all_selected, all_maa_opt_dict, keep_maa
     else:
         maa_all_selected, sel_maa = sync_select_all(maa_all_selected, maa_input, sel_maa, all_maa, triggered_id)
-        return maa_all_selected, all_maa, sel_maa
+        return maa_all_selected, all_maa_opt_dict, sel_maa
 
 @app.callback(
-    Output(plot, 'figure'),
+    Output(catch_plot, 'figure'),
+    Output(cpue_value_plot, 'figure'),
     Input(update_button, 'n_clicks'),
     State(maa_input, 'value'),
+    State(daterange_input, 'start_date'),
+    State(daterange_input, 'end_date'),
     prevent_initial_call = True
 )
-def update_plot(n_clicks, sel_maa):
-    plot_data = all_data.query(
-        "ma_name.isin(@sel_maa)"
-    ).loc[:,
+def update_plot(n_clicks, sel_maa, start_date, end_date):
+    start_date = datetime.date.fromisoformat(start_date)
+    end_date = datetime.date.fromisoformat(end_date)
+
+    filter_data = all_data.query(
+        "ma_id.isin(list(@sel_maa)) & \
+        @start_date <= date & \
+        date <= @end_date"
+    )
+
+    catch_data = filter_data.loc[:,
         ['yearmonth', 'weight_mt']
     ].groupby(
         by = ['yearmonth']
     ).sum().reset_index()
 
-    fig = px.bar(plot_data, x = 'yearmonth', y = 'weight_mt')
+    cpue_value_data = filter_data.assign(
+        weight_kg = lambda x: 1000*x['weight_mt']
+    ).loc[:, [
+        'date',
+        'yearmonth',
+        'fisher_id',
+        'ma_id', # restructure ma filtering to use id's -> use less memory, increase speed?
+        'fishbase_id',
+        'weight_kg',
+        'total_price_usd'
+    ]].groupby(
+        by = ['yearmonth', 'date', 'fisher_id', 'ma_id', 'fishbase_id'],
+        dropna = False # do not remove rows where one of the grouping variables is NA
+    ).sum().groupby(
+        by = ['yearmonth'],
+    ).agg(
+        avg_cpue_kg_trip = ('weight_kg', 'median'), # numbers differ slightly from old dashboard bc the query it pulls from uses SQL's APPROX_MEDIAN
+        ste_cpue_kg_trip = ('weight_kg', 'sem'), # DataFrame.std() uses bias corrected stddev, pd.std does not
+        avg_catch_value_usd = ('total_price_usd', 'median'),
+        ste_catch_value_usd = ('total_price_usd', 'sem')
+    ).reset_index()
 
-    return fig
+    catch_fig = px.bar(catch_data, x = 'yearmonth', y = 'weight_mt')
+    catch_fig.update_layout(
+        title_text = "Total Catch per Month (metric tons)"
+    )
+
+    cpue_value_fig = make_subplots(specs = [[{'secondary_y': True}]])
+    cpue_value_fig.add_trace(
+        go.Scatter(x = cpue_value_data['yearmonth'], y = cpue_value_data['avg_cpue_kg_trip']),
+        secondary_y = False
+    )
+    cpue_value_fig.add_trace(
+        go.Scatter(x = cpue_value_data['yearmonth'], y = cpue_value_data['avg_catch_value_usd']),
+        secondary_y = True
+    )
+    cpue_value_fig.update_layout(
+        title_text = 'Average CPUE and Catch Value'
+    )
+
+    return catch_fig, cpue_value_fig
 if __name__ == '__main__':
     app.run_server(debug=True)
