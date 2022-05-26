@@ -6,13 +6,16 @@ from mod_filters import (
     lgu_select_all, maa_input, maa_select_all, daterange_input, filters_UI
 )
 from mod_plot import catch_plot, cpue_value_plot, update_button, plot_UI
+from utils_plot import (
+    get_catch_data, make_catch_fig,
+    get_cpue_value_data, make_cpue_value_fig,
+    get_length_data, make_length_fig,
+    get_composition_data, make_composition_fig
+)
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
 import datetime
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import plotly.express as px
 
 
 external_scripts = [
@@ -179,7 +182,7 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
     State(daterange_input, 'end_date'),
     prevent_initial_call = True
 )
-def update_plot(n_clicks, sel_maa, start_date, end_date):
+def update_plots(n_clicks, sel_maa, start_date, end_date):
     start_date = datetime.date.fromisoformat(start_date)
     end_date = datetime.date.fromisoformat(end_date)
 
@@ -189,83 +192,18 @@ def update_plot(n_clicks, sel_maa, start_date, end_date):
         date <= @end_date"
     )
 
-    catch_data = filter_data.loc[:,
-        ['yearmonth', 'weight_mt']
-    ].groupby(
-        by = ['yearmonth']
-    ).sum().reset_index()
+    catch_data = get_catch_data(filter_data)
+    catch_fig = make_catch_fig(catch_data)
 
-    cpue_value_data = filter_data.assign(
-        weight_kg = lambda x: 1000*x['weight_mt']
-    ).loc[:, [
-        'date',
-        'yearmonth',
-        'fisher_id',
-        'ma_id', # restructure ma filtering to use id's -> use less memory, increase speed?
-        'fishbase_id',
-        'weight_kg',
-        'total_price_usd'
-    ]].groupby(
-        by = ['yearmonth', 'date', 'fisher_id', 'ma_id', 'fishbase_id'],
-        dropna = False # do not remove rows where one of the grouping variables is NA
-    ).sum().groupby(
-        by = ['yearmonth'],
-    ).agg(
-        avg_cpue_kg_trip = ('weight_kg', 'median'), # numbers differ slightly from old dashboard bc the query it pulls from uses SQL's APPROX_MEDIAN
-        ste_cpue_kg_trip = ('weight_kg', 'sem'), # DataFrame.std() uses bias corrected stddev, pd.std does not
-        avg_catch_value_usd = ('total_price_usd', 'median'),
-        ste_catch_value_usd = ('total_price_usd', 'sem')
-    ).reset_index()
+    cpue_value_data = get_cpue_value_data(filter_data)
+    cpue_value_fig = make_cpue_value_fig(cpue_value_data)
 
-    catch_fig = px.bar(
-        catch_data,
-        x = 'yearmonth', y = 'weight_mt',
-        labels = {
-            'yearmonth': '',
-            'weight_mt': ''
-        },
-        title = "Total Catch per Month (metric tons)"
-    )
-
-    cpue_value_fig = make_subplots(specs = [[{'secondary_y': True}]])
-    cpue_value_fig.add_trace(
-        go.Scatter(
-            x = cpue_value_data['yearmonth'],
-            y = cpue_value_data['avg_cpue_kg_trip'],
-            name = 'CPUE',
-            marker_color = '#5cb9ea'
-        ), secondary_y = False
-    )
-    cpue_value_fig.add_trace(
-        go.Scatter(
-            x = cpue_value_data['yearmonth'],
-            y = cpue_value_data['avg_catch_value_usd'],
-            name = 'Catch Value',
-            marker_color = '#f47762'
-        ), secondary_y = True
-    )
-    cpue_value_fig.update_layout(
-        title = 'Average CPUE per Trip and Average Catch Value',
-        xaxis_title = '',
-        yaxis = {
-            'title': 'CPUE (kg/trip)',
-            'titlefont': {
-                'color': '#5cb9ea'
-            },
-            'tickfont': {
-                'color': '#5cb9ea'
-            }
-        },
-        yaxis2 = {
-            'title': 'Catch Value (USD)',
-            'titlefont': {
-                'color': '#f47762'
-            },
-            'tickfont': {
-                'color': '#f47762'
-            }
-        }
-    )
+    ### Uncomment once these functions are written out
+    # length_data = get_length_data(filter_data)
+    # length_fig = make_length_fig(length_data)
+    #
+    # composition_data = get_composition_data(filter_data)
+    # composition_fig = make_composition_fig(composition_data)
 
     return catch_fig, cpue_value_fig
 if __name__ == '__main__':
