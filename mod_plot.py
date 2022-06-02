@@ -29,9 +29,9 @@ cpue_value_fig = make_cpue_value_fig(cpue_value_data)
 cpue_value_plot = dcc.Graph(id = 'cpue-value-plot', figure = cpue_value_fig)
 
 ### Uncomment once these functions are written out
-# length_data = get_length_data(init_data)
-# length_fig = make_length_fig(length_data)
-# length_plot = dcc.Graph(id = 'length-plot', figure = length_fig)
+length_data = get_length_data(init_data)
+length_fig = make_length_fig(length_data)
+length_plot = dcc.Graph(id = 'length-plot', figure = length_fig)
 #
 # composition_data = get_composition_data(init_data)
 # composition_fig = make_composition_fig(composition_data)
@@ -45,6 +45,10 @@ plot_UI = html.Div([
     html.Br(),
     catch_plot,
     html.Br(),
-    cpue_value_plot
+    cpue_value_plot,
+    html.Br(),
+    length_plot,
+    # html.Br(),
+    # composition_plot
 ], style = {'width': '49%', 'float': 'right', 'display': 'inline-block', 'height': '600px', 'overflow-y': 'scroll'}
 )

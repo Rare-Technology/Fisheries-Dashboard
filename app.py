@@ -5,7 +5,7 @@ from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
     lgu_select_all, maa_input, maa_select_all, daterange_input, filters_UI
 )
-from mod_plot import catch_plot, cpue_value_plot, update_button, plot_UI
+from mod_plot import catch_plot, cpue_value_plot, length_plot, update_button, plot_UI
 from utils_plot import (
     get_catch_data, make_catch_fig,
     get_cpue_value_data, make_cpue_value_fig,
@@ -176,6 +176,7 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
 @app.callback(
     Output(catch_plot, 'figure'),
     Output(cpue_value_plot, 'figure'),
+    Output(length_plot, 'figure'),
     Input(update_button, 'n_clicks'),
     State(maa_input, 'value'),
     State(daterange_input, 'start_date'),
@@ -199,12 +200,12 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     cpue_value_fig = make_cpue_value_fig(cpue_value_data)
 
     ### Uncomment once these functions are written out
-    # length_data = get_length_data(filter_data)
-    # length_fig = make_length_fig(length_data)
+    length_data = get_length_data(filter_data)
+    length_fig = make_length_fig(length_data)
     #
     # composition_data = get_composition_data(filter_data)
     # composition_fig = make_composition_fig(composition_data)
 
-    return catch_fig, cpue_value_fig
+    return catch_fig, cpue_value_fig, length_fig
 if __name__ == '__main__':
     app.run_server(debug=True)

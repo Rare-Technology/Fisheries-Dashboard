@@ -34,49 +34,61 @@ def get_cpue_value_data(data):
     ).reset_index()
 
 def get_length_data(data):
+    """
+    Extract length information using weight and ecological factors, then create dataframes
+    for calculating median lengths and proportion of mature population. Return the join of
+    these two datasets.
+    """
     lengths = data.query(
         "~count.isna() & \
         count != 0 & \
         ~a.isna() & \
-        ~b.isna()"
+        a != 0 & \
+        ~b.isna() & \
+        b != 0 & \
+        weight_mt != 0"
     ).assign(
         length_cm = lambda x: np.exp(np.log(1e6*x['weight_mt']/x['count']/x['a'])/x['b'])
-    ).loc[[
+    ).loc[:, [
         'date',
         'yearmonth',
         'ma_id',
         'fishbase_id',
-        'length_cm'
+        'length_cm',
+        'count',
+        'lmax'
     ]].query(
         "~length_cm.isna()"
+    ).reset_index(drop = True)
+
+    median_length_data = lengths.take(
+        lengths.index.repeat(
+            lengths['count']
+        )
+    ).groupby(
+        by = ['yearmonth']
+    ).agg(
+        med_length_cm = ('length_cm', 'median')
     )
 
-    # # TODO:
-    # Repeat length_cm's according to count, but keep grouping var info (yearmonth, etc)
-    # use this to eventually get both median lengths and prop matures
+    lengths = lengths.query("~lmax.isna()").reset_index(drop = True)
 
-    # .groupby(
-    #     by = ['yearmonth']
-    # ).agg(
-    #     med_length_cm = ('length_cm', 'median')
-    # )
-
-    prop_mature = data.query(
-        "~count.isna() & \
-        count != 0 & \
-        ~a.isna() & \
-        ~b.isna() & \
-        ~lmax.isna()"
+    prop_mature = lengths.assign(
+        linf = lambda x: np.power(10, 0.044 + 0.9841*np.log10(x['lmax'])),
+        lmat = lambda x: np.power(10, 0.8979*np.log10(x['linf']) - 0.0782),
+        count_mature = lambda x: x['count'] * (x['length_cm'] > x['lmat'])
+    ).groupby(
+        by = ['yearmonth']
+    ).agg(
+        count = ('count', 'sum'),
+        count_mature = ('count_mature', 'sum')
     ).assign(
-        length_cm = lambda x: np.exp(np.log(1e6*x['weight_mt']/x['count']/x['a'])/x['b'])
-        linf = lambda x: np.power(10, 0.044 + 0.9841*np.log10(x['lmax']))
-        lmat = lambda x: np.power(10, 0.8979*np.log10(x['linf']) - 0.0782)
-    ).loc[[
-        'yearmonth',
-        'date',
-        'ma_id',
-        'fishbase_id',
-    ]]
+        Pmat = lambda x: 100 * x['count_mature'] / x['count']
+    ).loc[:, ['Pmat']]
+
+    length_data = prop_mature.join(median_length_data, how = 'inner').reset_index()
+
+    return length_data
 
 def get_composition_data(data):
     pass
@@ -136,7 +148,47 @@ def make_cpue_value_fig(cpue_value_data):
     return fig
 
 def make_length_fig(length_data):
-    pass
+    fig = make_subplots(specs = [[{'secondary_y': True}]])
+    fig.add_trace(
+        go.Scatter(
+            x = length_data['yearmonth'],
+            y = length_data['med_length_cm'],
+            name = 'Median length',
+            marker_color = '#5cb9ea'
+        ), secondary_y = False
+    )
+    fig.add_trace(
+        go.Scatter(
+            x = length_data['yearmonth'],
+            y = length_data['Pmat'],
+            name = '% Mature',
+            marker_color = '#f47762'
+        ), secondary_y = True
+    )
+    fig.update_layout(
+        title = 'Median Length and Proportion of Mature Catch',
+        xaxis_title = '',
+        yaxis = {
+            'title': 'Median Length (cm)',
+            'titlefont': {
+                'color': '#5cb9ea'
+            },
+            'tickfont': {
+                'color': '#5cb9ea'
+            }
+        },
+        yaxis2 = {
+            'title': '% Mature',
+            'titlefont': {
+                'color': '#f47762'
+            },
+            'tickfont': {
+                'color': '#f47762'
+            }
+        }
+    )
+
+    return fig
 
 def make_composition_fig(composition_data):
     pass
