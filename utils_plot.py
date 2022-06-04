@@ -91,7 +91,25 @@ def get_length_data(data):
     return length_data
 
 def get_composition_data(data):
-    pass
+    # The plot numbers look different from the old dashboard because the old dashboard
+    # has a bug in the SQL code that double counts the weight of any species that are non-focal
+    return (data
+        .loc[:, [
+            'family_scientific', # for later...
+            'species_local',
+            'is_focal',
+            'species_scientific',
+            'weight_mt'
+        ]]
+        .groupby(['is_focal', 'species_local', 'species_scientific']).sum()
+        .reset_index()
+        .sort_values(
+            by = ['weight_mt'],
+            axis = 0,
+            ascending = False
+        )
+        .iloc[:10,]
+    )
 
 def make_catch_fig(catch_data):
     return px.bar(
@@ -190,5 +208,12 @@ def make_length_fig(length_data):
 
     return fig
 
-def make_composition_fig(composition_data):
-    pass
+def make_composition_fig(comp_data):
+    return px.pie(
+        comp_data,
+        names = 'species_scientific',
+        values = 'weight_mt',
+        hole = 0.5,
+        title = "Catch Composition (Top 10, metric tons)"
+
+    )
