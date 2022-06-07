@@ -92,7 +92,7 @@ def get_length_data(data):
 
 def get_composition_data(data):
     # The plot numbers look different from the old dashboard because the old dashboard
-    # has a bug in the SQL code that double counts the weight of any species that are non-focal
+    # has a bug in the SQL code that double counts the weight any species that are non-focal
     return (data
         .loc[:, [
             'family_scientific', # for later...

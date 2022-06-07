@@ -94,9 +94,23 @@ snu = all_data[['country_id', 'snu_id', 'snu_name']].drop_duplicates().reset_ind
 
 lgu = all_data[['country_id', 'snu_id', 'lgu_id', 'lgu_name']].drop_duplicates().reset_index(drop = True)
 
-maa = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'ma_name']].drop_duplicates().reset_index(drop = True)
 ### May 19 2022
 # There are 2695 records with a blank ma. Some communities just haven't been assigned one
 # in the MA+R tracker; it is up to country teams to complete their data management.
+maa = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'ma_name', 'ma_lat', 'ma_lon']].drop_duplicates().reset_index(drop = True)
+maa['ma_lat'] = maa['ma_lat'].fillna(0)
+maa['ma_lon'] = maa['ma_lon'].fillna(0)
 maa = maa.dropna()
 maa['ma_id'] = maa['ma_id'].astype(int)
+
+# choose start and end dates to initially show the past 6 months of data
+end_date = all_data['date'].max()
+if end_date.month >= 6:
+    start_date = datetime.date(end_date.year, end_date.month - 5, 1)
+else:
+    start_date = datetime.date(end_date.year - 1, end_date.month + 7, 1)
+init_data = all_data.query(
+    "ma_id.isin(list(@maa['ma_id'])) & \
+    @start_date <= date & \
+    date <= @end_date"
+)

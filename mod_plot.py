@@ -1,23 +1,11 @@
 from dash import dcc, html
 import datetime
-from mod_dataworld import maa, all_data
+from mod_dataworld import maa, init_data
 from utils_plot import (
     get_catch_data, make_catch_fig,
     get_cpue_value_data, make_cpue_value_fig,
     get_length_data, make_length_fig,
     get_composition_data, make_composition_fig
-)
-# choose start and end dates to initially show the past 6 months of data
-end_date = all_data['date'].max()
-if end_date.month >= 6:
-    start_date = datetime.date(end_date.year, end_date.month - 5, 1)
-else:
-    start_date = datetime.date(end_date.year - 1, end_date.month + 7, 1)
-
-init_data = all_data.query(
-    "ma_id.isin(list(@maa['ma_id'])) & \
-    @start_date <= date & \
-    date <= @end_date"
 )
 
 catch_data = get_catch_data(init_data)

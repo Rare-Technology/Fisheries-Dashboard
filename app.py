@@ -12,6 +12,7 @@ from utils_plot import (
     get_length_data, make_length_fig,
     get_composition_data, make_composition_fig
 )
+from mod_map import map_UI
 from mod_text import output, text_UI
 from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
@@ -37,6 +38,7 @@ external_stylesheets = [
 app = Dash(__name__, external_stylesheets = external_stylesheets)
 
 app.layout = html.Div([
+    map_UI,
     html.Div(
         filters_UI + text_UI,
         style = {'width': '49%', 'display': 'inline-block', 'height': '600px', 'overflow-y': 'scroll'}
