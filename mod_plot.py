@@ -30,11 +30,13 @@ plot_UI = html.Div([
     update_button,
     html.Br(),
     html.Br(),
-    composition_plot,
-    catch_plot,
-    html.Br(),
-    cpue_value_plot,
-    html.Br(),
-    length_plot
-], style = {'width': '49%', 'float': 'right', 'display': 'inline-block', 'height': '600px', 'overflow-y': 'scroll'}
+    html.Div([
+        composition_plot,
+        catch_plot
+    ], style = {'width': '49%', 'float': 'left'}),
+    html.Div([
+        cpue_value_plot,
+        length_plot
+    ], style = {'width': '49%', 'float': 'right'})
+], style = {'width': '100%', 'height': '400px'}
 )
