@@ -26,7 +26,7 @@ composition_plot = dcc.Graph(id = 'composition-plot', figure = composition_fig)
 
 update_button = html.Button(children = 'Apply filters', className = "btn btn-primary")
 
-plot_UI = html.Div([
+plot_div = html.Div([
     update_button,
     html.Br(),
     html.Br(),

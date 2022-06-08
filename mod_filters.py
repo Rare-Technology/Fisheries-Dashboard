@@ -63,7 +63,7 @@ maa_input = dcc.Dropdown(id = 'maa-input',
     options = [],
     value = [],
     multi = True,
-    clearable = False
+    clearable = False,
 )
 maa_select_all = dcc.Checklist(id = 'maa-select-all',
     options = ['Select all'],
@@ -96,12 +96,34 @@ daterange_div = html.Div([
 ])
 
 filters_UI = [
+    daterange_div,
+    html.Br(),
     country_div,
     html.Br(),
     snu_div,
     html.Br(),
     lgu_div,
     html.Br(),
-    maa_div,
-    html.Br(),
-    daterange_div]
+    maa_div]
+
+filter_inputs_div = html.Div(filters_UI,
+    id = 'filter-inputs'
+)
+
+filter_inputs_toggle_div = html.Div([
+        html.H3("Filters", style = {"display": "inline"}),
+        html.Span(
+            [html.Span(className = "Select-arrow")],
+            className = "Select-arrow-zone",
+            id = "filter-inputs-arrow"
+        )
+    ],
+    id = "filter-inputs-toggle"
+)
+
+filter_div = html.Div([
+    filter_inputs_toggle_div,
+    filter_inputs_div
+    ],
+    id = "filters-container",
+)

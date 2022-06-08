@@ -3,9 +3,9 @@ from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
-    lgu_select_all, maa_input, maa_select_all, daterange_input, filters_UI
+    lgu_select_all, maa_input, maa_select_all, daterange_input, filter_div
 )
-from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, update_button, plot_UI
+from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, update_button, plot_div
 from utils_plot import (
     get_catch_data, make_catch_fig,
     get_cpue_value_data, make_cpue_value_fig,
@@ -13,7 +13,7 @@ from utils_plot import (
     get_composition_data, make_composition_fig
 )
 from mod_map import map_div
-from mod_text import output, text_UI
+from mod_highlights import highlights_div
 from mod_dataworld import countries, snu, lgu, maa, all_data
 from utils_filters import sync_select_all
 import datetime
@@ -39,19 +39,10 @@ app = Dash(__name__, external_stylesheets = external_stylesheets)
 
 app.layout = html.Div([
     map_div,
-    html.Div(
-        filters_UI + text_UI,
-        style = {
-            'z-index': '2',
-            'position': 'absolute',
-            'top': '0',
-            'width': '400px',
-            'display': 'inline-block',
-            'height': '600px',
-            'overflow-y': 'scroll'
-        }
-    ),
-    plot_UI
+    filter_div,
+    highlights_div,
+    html.Br(),
+    plot_div
 ], className = "container")
 
 @app.callback(
@@ -217,5 +208,18 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     composition_fig = make_composition_fig(composition_data)
 
     return catch_fig, cpue_value_fig, length_fig, composition_fig
+
+@app.callback(
+    Output('filter-inputs', 'style'),
+    Input('filter-inputs-toggle', 'n_clicks')
+)
+def toggle_filter_display(n_clicks):
+    if n_clicks is None or n_clicks % 2 == 0:
+        style = {"display": "none"}
+    else:
+        style = {"display": "block"}
+
+    return style
+
 if __name__ == '__main__':
     app.run_server(debug=True)
