@@ -1,4 +1,8 @@
 from dash import dcc, html
+from utils_highlights import (
+    get_total_weight, get_total_value, get_total_trips,
+    get_fishers, get_female, get_buyers
+)
 
 def create_card(value, title):
     return html.Div(
@@ -7,7 +11,7 @@ def create_card(value, title):
             html.Div(
                 className = "card-body",
                 children = [
-                    html.H4(value, className = "card-title"),
+                    html.H5(value, className = "card-title"),
                     html.H6(title, className = "card-subtitle")
                 ]
             )

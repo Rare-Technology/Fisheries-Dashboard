@@ -10,19 +10,43 @@ from utils_plot import (
 
 catch_data = get_catch_data(init_data)
 catch_fig = make_catch_fig(catch_data)
-catch_plot = dcc.Graph(id = 'catches-plot', figure = catch_fig)
+catch_plot = dcc.Graph(
+    id = 'catches-plot',
+    className = "pretty_container",
+    figure = catch_fig,
+    config = {
+        'modeBarButtonsToRemove': ['select', 'lasso2d'],
+        'displaylogo': False
+    }
+)
 
 cpue_value_data = get_cpue_value_data(init_data)
 cpue_value_fig = make_cpue_value_fig(cpue_value_data)
-cpue_value_plot = dcc.Graph(id = 'cpue-value-plot', figure = cpue_value_fig)
+cpue_value_plot = dcc.Graph(
+    id = 'cpue-value-plot',
+    className = "pretty_container mb-4",
+    figure = cpue_value_fig,
+    config = {
+        'modeBarButtonsToRemove': ['select', 'lasso2d'],
+        'displaylogo': False
+    }
+)
 
 length_data = get_length_data(init_data)
 length_fig = make_length_fig(length_data)
-length_plot = dcc.Graph(id = 'length-plot', figure = length_fig)
+length_plot = dcc.Graph(
+    id = 'length-plot',
+    className = "pretty_container",
+    figure = length_fig
+)
 
 composition_data = get_composition_data(init_data)
 composition_fig = make_composition_fig(composition_data)
-composition_plot = dcc.Graph(id = 'composition-plot', figure = composition_fig)
+composition_plot = dcc.Graph(
+    id = 'composition-plot',
+    className = "pretty_container mb-4",
+    figure = composition_fig
+)
 
 update_button = html.Button(children = 'Apply filters', className = "btn btn-primary")
 
@@ -33,10 +57,10 @@ plot_div = html.Div([
     html.Div([
         composition_plot,
         catch_plot
-    ], style = {'width': '49%', 'float': 'left'}),
+    ], style = {'width': '49.5%', 'float': 'left'}),
     html.Div([
         cpue_value_plot,
         length_plot
-    ], style = {'width': '49%', 'float': 'right'})
+    ], style = {'width': '49.5%', 'float': 'right'})
 ], style = {'width': '100%', 'height': '400px'}
 )

@@ -3,6 +3,19 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 
+pretty_template = {
+    'layout': {
+        'paper_bgcolor': '#e5f7fa',
+        'plot_bgcolor': '#e5f7fa',
+        'yaxis': {
+            'gridcolor': '#5E6A71'
+        },
+        'xaxis': {
+            'gridcolor': '#5E6A71'
+        }
+    }
+}
+
 def get_catch_data(data):
     return data.loc[:,
         ['yearmonth', 'weight_mt']
@@ -112,15 +125,23 @@ def get_composition_data(data):
     )
 
 def make_catch_fig(catch_data):
-    return px.bar(
-        catch_data,
-        x = 'yearmonth', y = 'weight_mt',
-        labels = {
-            'yearmonth': '',
-            'weight_mt': ''
-        },
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x = catch_data['yearmonth'],
+        y = catch_data['weight_mt'],
+        marker_color = '#005BBB'
+    ))
+
+    fig.update_layout(
         title = "Total Catch per Month (metric tons)",
+        xaxis_title = "",
+        template = pretty_template
     )
+
+    fig.update_xaxes(fixedrange = True)
+    fig.update_yaxes(fixedrange = True)
+
+    return fig
 
 def make_cpue_value_fig(cpue_value_data):
     fig = make_subplots(specs = [[{'secondary_y': True}]])
@@ -160,8 +181,12 @@ def make_cpue_value_fig(cpue_value_data):
             'tickfont': {
                 'color': '#f47762'
             }
-        }
+        },
+        template = pretty_template
     )
+
+    fig.update_xaxes(fixedrange = True)
+    fig.update_yaxes(fixedrange = True)
 
     return fig
 
@@ -203,17 +228,24 @@ def make_length_fig(length_data):
             'tickfont': {
                 'color': '#f47762'
             }
-        }
+        },
+        template = pretty_template
     )
+
+    fig.update_xaxes(fixedrange = True)
+    fig.update_yaxes(fixedrange = True)
 
     return fig
 
 def make_composition_fig(comp_data):
-    return px.pie(
+    fig = px.pie(
         comp_data,
         names = 'species_scientific',
         values = 'weight_mt',
         hole = 0.5,
         title = "Catch Composition (Top 10, metric tons)"
-
     )
+
+    fig.update_layout(template = pretty_template)
+
+    return fig

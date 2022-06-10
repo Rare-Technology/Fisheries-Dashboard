@@ -29,7 +29,8 @@ QUERY_ID = {
     'export_catch': "b64b8866-308a-417d-8b79-41f3568eec89",
     'join_ourfish_footprint_fishbase': "63cec79b-14de-4197-85f0-ee83f9ce16c0",
     'join_ourfish_footprint': '4f40bdaf-64b0-4d66-b9a9-da967979bb39',
-    'join_fishbase_focal_species': '9315ae27-8978-4525-b77e-e2072fdc10f9'
+    'join_fishbase_focal_species': '9315ae27-8978-4525-b77e-e2072fdc10f9',
+    'join_fishers_footprint': '4309cfb9-ba12-4205-a9b6-3e35ce83e2b5'
 }
 
 
@@ -63,6 +64,11 @@ def get_data(query_file_name, endpoint, request_method, params = None):
     data = pd.json_normalize(data)
 
     return data
+
+fishers_data = get_data('join_fishers_footprint', 'query', 'GET')
+fishers_data = fishers_data[['date', 'ma_id', 'fisher_id', 'gender']].dropna()
+fishers_data['ma_id'] = fishers_data['ma_id'].astype(int)
+### may need to do more data cleaning
 
 all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 # >>> all_data.head()

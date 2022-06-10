@@ -3,6 +3,11 @@ import plotly.express as px
 from dash import dcc, html
 from mod_dataworld import init_data, maa
 from utils_map import get_map_data
+import configparser
+
+cfg = configparser.ConfigParser(interpolation = None)
+cfg.read('secret.ini')
+mapbox_url = cfg.get('mapbox', 'URL')
 
 map_data = get_map_data(init_data, maa)
 
@@ -43,7 +48,7 @@ fig.update_layout(
             'below': 'traces',
             'sourcetype': 'raster',
             'sourceattribution': 'OpenStreetMap',
-            'source': ['https://api.mapbox.com/styles/v1/stoyleg/ckog2kkao0o5j1amjvgizilp2/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoic3RveWxlZyIsImEiOiJjaWZ5ZXN1YXQwMmh4dDBtN2lidWZpb3AwIn0.h_bxYt64qWi6PIBeJ1bqPA']
+            'source': [mapbox_url]
         }
     ],
     showlegend = False,
@@ -56,7 +61,12 @@ fig.update_layout(
     height = 600
 )
 
-map = dcc.Graph(id = 'fish-map', figure = fig)
+map = dcc.Graph(
+    id = 'fish-map',
+    className = "mb-5",
+    figure = fig,
+    config = {'displayModeBar': False}
+)
 map_div = html.Div(
     [map],
     style = {

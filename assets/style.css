@@ -1,3 +1,11 @@
+/* Many stylings related to filters are adapted from the work of Mario Rodríguez Ibáñez - Diogo Acabado - Doris Macean - Daniel Philippi
+See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
+
+@font-face {
+  font-family: "PFSquareSansCondPro";
+  src: url('fonts/rare-brand/PFSquareSansCondPro-Regular.otf');
+}
+
 #filters-container{
   z-index: 2;
   background-color: #333333;
@@ -60,15 +68,39 @@
     text-align: center;
     position: absolute;
     top:500px;
-    left:8.5%;
-    width: 83%;
+    left: 13.5%;
+    width: 73%;
 }
 
 .card-body {
   border-radius: 5px;
-  background-color: rgba(82, 132, 206, 1);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 0;
+  padding-right: 0;
+  background-color: rgba(82, 132, 206, 0.6);
 }
 
 .card {
+  border: 0;
   background-color: rgba(0,0,0,0);
+}
+
+
+/* Adapted from Jon Mease, Jose Diaz-Gonzalez, Elliot Gunn, and Rob Calvin https://github.com/plotly/dash-world-cell-towers/blob/master/dash_opencellid/assets/s1.css */
+.pretty_container {
+  border-radius: 33px 0;
+  background-color: #e5f7fa;  /* Mapbox light map land color */
+  margin: 1%;
+  padding-top: 2%;
+  padding-bottom: 2%;
+  padding-left: 2%;
+  padding-right: 1%;
+  position: relative;
+  box-shadow: 2px 2px 1px #5E6A71;
+}
+
+.gtitle {
+  font-family: "PFSquareSansCondPro", arial, sans-serif !important;
+  font-size: 25px !important;
 }
