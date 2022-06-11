@@ -37,7 +37,11 @@ length_fig = make_length_fig(length_data)
 length_plot = dcc.Graph(
     id = 'length-plot',
     className = "pretty_container",
-    figure = length_fig
+    figure = length_fig,
+    config = {
+        'modeBarButtonsToRemove': ['select', 'lasso2d'],
+        'displaylogo': False
+    }
 )
 
 composition_data = get_composition_data(init_data)
@@ -45,7 +49,10 @@ composition_fig = make_composition_fig(composition_data)
 composition_plot = dcc.Graph(
     id = 'composition-plot',
     className = "pretty_container mb-4",
-    figure = composition_fig
+    figure = composition_fig,
+    config = {
+        'displaylogo': False
+    }
 )
 
 update_button = html.Button(children = 'Apply filters', className = "btn btn-primary")

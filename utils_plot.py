@@ -3,18 +3,28 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 
+COLORS = {
+    'rare-blue': '#005BBB',
+    'rare-green': '#008542',
+    'rare-gray': '#5E6A71',
+    'secondary-red': '#AA1948',
+    'secondary-blue': '#00AFD8',
+    'secondary-orange': '#F58233'
+}
+
 pretty_template = {
     'layout': {
         'paper_bgcolor': '#e5f7fa',
         'plot_bgcolor': '#e5f7fa',
         'yaxis': {
-            'gridcolor': '#5E6A71'
+            'gridcolor': COLORS['rare-gray']
         },
         'xaxis': {
-            'gridcolor': '#5E6A71'
-        }
+            'gridcolor': COLORS['rare-gray']
+        },
     }
 }
+
 
 def get_catch_data(data):
     return data.loc[:,
@@ -27,22 +37,24 @@ def get_cpue_value_data(data):
     return data.assign(
         weight_kg = lambda x: 1e3*x['weight_mt']
     ).loc[:, [
-        'date',
+        # 'date',
         'yearmonth',
-        'fisher_id',
-        'ma_id', # restructure ma filtering to use id's -> use less memory, increase speed?
-        'fishbase_id',
+        # 'fisher_id',
+        # 'ma_id', # restructure ma filtering to use id's -> use less memory, increase speed?
+        # 'fishbase_id',
         'weight_kg',
         'total_price_usd'
+    # ]].groupby(
+        # by = ['yearmonth', 'date', 'fisher_id', 'ma_id', 'fishbase_id'],
+        # dropna = False # do not remove rows where one of the grouping variables is NA
+    # )
+    # ]].sum().groupby(
     ]].groupby(
-        by = ['yearmonth', 'date', 'fisher_id', 'ma_id', 'fishbase_id'],
-        dropna = False # do not remove rows where one of the grouping variables is NA
-    ).sum().groupby(
         by = ['yearmonth'],
     ).agg(
-        avg_cpue_kg_trip = ('weight_kg', 'median'), # numbers differ slightly from old dashboard bc the query it pulls from uses SQL's APPROX_MEDIAN
+        avg_cpue_kg_trip = ('weight_kg', 'mean'), # numbers differ slightly from old dashboard bc the query it pulls from uses SQL's APPROX_MEDIAN
         ste_cpue_kg_trip = ('weight_kg', 'sem'), # DataFrame.std() uses bias corrected stddev, pd.std does not
-        avg_catch_value_usd = ('total_price_usd', 'median'),
+        avg_catch_value_usd = ('total_price_usd', 'mean'),
         ste_catch_value_usd = ('total_price_usd', 'sem')
     ).reset_index()
 
@@ -129,7 +141,7 @@ def make_catch_fig(catch_data):
     fig.add_trace(go.Bar(
         x = catch_data['yearmonth'],
         y = catch_data['weight_mt'],
-        marker_color = '#005BBB'
+        marker_color = COLORS['rare-blue']
     ))
 
     fig.update_layout(
@@ -150,7 +162,8 @@ def make_cpue_value_fig(cpue_value_data):
             x = cpue_value_data['yearmonth'],
             y = cpue_value_data['avg_cpue_kg_trip'],
             name = 'CPUE',
-            marker_color = '#5cb9ea'
+            marker_color = COLORS['rare-blue'],
+            yaxis = 'y'
         ), secondary_y = False
     )
     fig.add_trace(
@@ -158,29 +171,32 @@ def make_cpue_value_fig(cpue_value_data):
             x = cpue_value_data['yearmonth'],
             y = cpue_value_data['avg_catch_value_usd'],
             name = 'Catch Value',
-            marker_color = '#f47762'
+            marker_color = COLORS['secondary-red'],
+            yaxis = 'y2'
         ), secondary_y = True
     )
     fig.update_layout(
-        title = 'Average CPUE per Trip and Average Catch Value',
+        title = 'Average CPUE and Catch Value per Trip',
         xaxis_title = '',
         yaxis = {
             'title': 'CPUE (kg/trip)',
             'titlefont': {
-                'color': '#5cb9ea'
+                'color': COLORS['rare-blue']
             },
             'tickfont': {
-                'color': '#5cb9ea'
-            }
+                'color': COLORS['rare-blue']
+            },
+            'nticks': 4
         },
         yaxis2 = {
-            'title': 'Catch Value (USD)',
+            'title': 'Catch Value (USD/trip)',
             'titlefont': {
-                'color': '#f47762'
+                'color': COLORS['secondary-red']
             },
             'tickfont': {
-                'color': '#f47762'
-            }
+                'color': COLORS['secondary-red']
+            },
+            'nticks': 4
         },
         template = pretty_template
     )
@@ -197,7 +213,7 @@ def make_length_fig(length_data):
             x = length_data['yearmonth'],
             y = length_data['med_length_cm'],
             name = 'Median length',
-            marker_color = '#5cb9ea'
+            marker_color = COLORS['rare-blue']
         ), secondary_y = False
     )
     fig.add_trace(
@@ -205,29 +221,32 @@ def make_length_fig(length_data):
             x = length_data['yearmonth'],
             y = length_data['Pmat'],
             name = '% Mature',
-            marker_color = '#f47762'
+            marker_color = COLORS['secondary-red']
         ), secondary_y = True
     )
     fig.update_layout(
         title = 'Median Length and Proportion of Mature Catch',
         xaxis_title = '',
+        xaxis = {
+            'zerolinecolor': '#ffffff'
+        },
         yaxis = {
             'title': 'Median Length (cm)',
             'titlefont': {
-                'color': '#5cb9ea'
+                'color': COLORS['rare-blue']
             },
             'tickfont': {
-                'color': '#5cb9ea'
+                'color': COLORS['rare-blue']
             }
         },
         yaxis2 = {
             'title': '% Mature',
             'titlefont': {
-                'color': '#f47762'
+                'color': COLORS['secondary-red']
             },
             'tickfont': {
-                'color': '#f47762'
-            }
+                'color': COLORS['secondary-red']
+            },
         },
         template = pretty_template
     )
@@ -238,14 +257,26 @@ def make_length_fig(length_data):
     return fig
 
 def make_composition_fig(comp_data):
-    fig = px.pie(
-        comp_data,
-        names = 'species_scientific',
-        values = 'weight_mt',
+    fig = go.Figure(data = [go.Pie(
+        labels = comp_data['species_scientific'],
+        values = comp_data['weight_mt'],
         hole = 0.5,
-        title = "Catch Composition (Top 10, metric tons)"
+    )])
+
+    fig.update_traces(
+        hoverinfo = 'label+value',
+        textinfo = 'percent',
+        marker = dict(
+            line = dict(
+                color = '#e5f7fa',
+                width = 2
+            )
+        )
     )
 
-    fig.update_layout(template = pretty_template)
+    fig.update_layout(
+        title = "Catch Composition (Top 10, metric tons)",
+        template = pretty_template
+    )
 
     return fig

@@ -1,6 +1,7 @@
 import requests
 import configparser
 import pandas as pd
+import numpy as np
 import json
 import datetime
 
@@ -90,6 +91,7 @@ all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 # Takes approx 15s to get the query result
 all_data['date'] = all_data['date'].apply(datetime.date.fromisoformat)
 all_data['yearmonth'] = all_data['date'].apply(lambda x: datetime.date(x.year, x.month, 1))
+all_data['ma_id'] = all_data['ma_id'].apply(lambda x: -1 if np.isnan(x) else x).astype(int)
 
 # countries = get_data('countries', 'query', 'GET')
 countries = all_data[['country_id', 'country']].drop_duplicates().rename(
@@ -107,7 +109,9 @@ maa = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'ma_name', 'ma_lat', 
 maa['ma_lat'] = maa['ma_lat'].fillna(0)
 maa['ma_lon'] = maa['ma_lon'].fillna(0)
 maa = maa.dropna()
-maa['ma_id'] = maa['ma_id'].astype(int)
+
+comm = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'community_id', 'community_name', 'community_lat', 'community_lon']].drop_duplicates().reset_index(drop = True)
+comm = comm.query("~community_lat.isna() & ~community_lon.isna()")
 
 # choose start and end dates to initially show the past 6 months of data
 end_date = all_data['date'].max()

@@ -1,65 +1,12 @@
 import plotly.graph_objects as go
 import plotly.express as px
 from dash import dcc, html
-from mod_dataworld import init_data, maa
-from utils_map import get_map_data
-import configparser
+from mod_dataworld import init_data, comm
+from utils_map import get_map_data, make_map, mapbox_url
 
-cfg = configparser.ConfigParser(interpolation = None)
-cfg.read('secret.ini')
-mapbox_url = cfg.get('mapbox', 'URL')
+map_data = get_map_data(init_data, comm)
 
-map_data = get_map_data(init_data, maa)
-
-# fig = go.Figure(go.Scattermapbox(mode = 'markers', fill = 'toself', marker = {'size': 10, 'color': 'orange'}))
-# fig = px.scatter_mapbox(map_data,
-#     lat = 'ma_lat', lon = 'ma_lon',
-#     hover_name = 'ma_name', hover_data = ['weight_mt'],
-# )
-
-hovertext_list = [
-    "Community: {}<br>Total Catch Weight (kg): {}".format(ma_name, biomass) for ma_name, biomass in zip(map_data['ma_name'], map_data['weight_kg'].astype(int))
-]
-
-fig = go.Figure()
-fig.add_trace(go.Scattermapbox(
-    lat = map_data['ma_lat'], lon = map_data['ma_lon'],
-    mode = 'markers',
-    marker = go.scattermapbox.Marker(
-        size = 15,
-        color = '#6fbcc3'
-    ),
-    hoverinfo = 'none'
-))
-fig.add_trace(go.Scattermapbox(
-    lat = map_data['ma_lat'], lon = map_data['ma_lon'],
-    mode = 'markers',
-    marker = go.scattermapbox.Marker(
-        size = 10,
-        color = '#99f2e8'
-    ),
-    hoverinfo = 'text',
-    hovertext = hovertext_list,
-))
-fig.update_layout(
-    mapbox_style = 'white-bg',
-    mapbox_layers = [
-        {
-            'below': 'traces',
-            'sourcetype': 'raster',
-            'sourceattribution': 'OpenStreetMap',
-            'source': [mapbox_url]
-        }
-    ],
-    showlegend = False,
-    margin = {
-        't': 0,
-        'r': 0,
-        'b': 0,
-        'l': 0
-    },
-    height = 600
-)
+fig = make_map(map_data, mapbox_url)
 
 map = dcc.Graph(
     id = 'fish-map',

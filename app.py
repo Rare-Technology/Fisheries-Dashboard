@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
+from utils_filters import sync_select_all
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
     lgu_select_all, maa_input, maa_select_all, daterange_input, filter_div
 )
-from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, update_button, plot_div
 from utils_plot import (
     get_catch_data, make_catch_fig,
     get_cpue_value_data, make_cpue_value_fig,
     get_length_data, make_length_fig,
     get_composition_data, make_composition_fig
 )
-from mod_map import map_div
+from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, update_button, plot_div
+from utils_map import get_map_data, make_map, mapbox_url
+from mod_map import map, map_div
 from mod_highlights import highlights_div
-from mod_dataworld import countries, snu, lgu, maa, all_data
-from utils_filters import sync_select_all
+from mod_dataworld import countries, snu, lgu, maa, comm, all_data
+
 import datetime
 
 
@@ -70,7 +72,7 @@ def sync_country_select_all(all_selected, sel_country):
     Input(country_input, 'value'),
     State(snu_input, 'options'),
 )
-def update_snu(snu_all_selected, sel_snu, sel_country, state_opt_snu):
+def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict):
     """
     This callback will handle the following events:
 
@@ -84,23 +86,32 @@ def update_snu(snu_all_selected, sel_snu, sel_country, state_opt_snu):
     """
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    sel_country_id = countries.query("country_name.isin(@sel_country)")['country_id']
-    all_snu = list(snu.query("country_id.isin(@sel_country_id)")['snu_name'])
+    sel_country = list(countries.query("country_name.isin(@sel_country_names)")['country_id'])
+    all_snu = list(snu.query("country_id.isin(@sel_country)")['snu_id'])
+    all_snu_names = list(snu.query("country_id.isin(@sel_country)")['snu_name'])
+    all_snu_opt_dict = [{'label': s_name, 'value': s} for s_name, s in zip(all_snu_names, all_snu)]
+    state_opt_snu = [d['value'] for d in state_opt_snu_dict]
 
     if triggered_id == country_input.id:
+        # Update triggered by change to country selections
         if set(state_opt_snu) == set(sel_snu):
+            # User has not removed any available SNU selections, so the new
+            # SNU values will match the new SNU options
             snu_all_selected = ['Select all'] if sel_country != [] else []
-            return snu_all_selected, all_snu, all_snu
+            return snu_all_selected, all_snu_opt_dict, all_snu
         else:
-            # the user has made changes to the snu selections so don't touch the selected
-            # snu's unless any of them belong to a country no longer selected. Filter those out.
+            # The user has previously deselected SNU's. The new SNU values will keep the
+            # same SNU's deselected but add any new SNU's.
             diff_snu = [s for s in state_opt_snu if s not in sel_snu] # snu's explicitly de-selected
             keep_snu = [s for s in all_snu if s not in diff_snu]
             snu_all_selected = ['Select all'] if set(keep_snu) == set(all_snu) else []
-            return snu_all_selected, all_snu, keep_snu
+            return snu_all_selected, all_snu_opt_dict, keep_snu
     else:
+        # Update triggered by change to SNU value or 'Select all' checkbox.
+        # If SNU value is the trigger, update the checkbox
+        # If the checkbox is the trigger, update the SNU values
         snu_all_selected, sel_snu = sync_select_all(snu_all_selected, snu_input, sel_snu, all_snu, triggered_id)
-        return snu_all_selected, all_snu, sel_snu
+        return snu_all_selected, all_snu_opt_dict, sel_snu
 
 @app.callback(
     Output(lgu_select_all, 'value'),
@@ -111,7 +122,7 @@ def update_snu(snu_all_selected, sel_snu, sel_country, state_opt_snu):
     Input(snu_input, 'value'),
     State(lgu_input, 'options'),
 )
-def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu):
+def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
     """
     This callback will handle the following events:
 
@@ -125,23 +136,25 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu):
     """
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    sel_snu_id = snu.query("snu_name.isin(@sel_snu)")['snu_id']
-    all_lgu = list(lgu.query("snu_id.isin(@sel_snu_id)")['lgu_name'])
+    all_lgu = list(lgu.query("snu_id.isin(@sel_snu)")['lgu_id'])
+    all_lgu_names = list(lgu.query("snu_id.isin(@sel_snu)")['lgu_name'])
+    all_lgu_opt_dict = [{'label': l_name, 'value': l} for l_name, l in zip(all_lgu_names, all_lgu)]
+    state_opt_lgu = [d['value'] for d in state_opt_lgu_dict]
 
     if triggered_id == snu_input.id:
         if set(state_opt_lgu) == set(sel_lgu):
             lgu_all_selected = ['Select all'] if sel_snu != [] else []
-            return lgu_all_selected, all_lgu, all_lgu
+            return lgu_all_selected, all_lgu_opt_dict, all_lgu
         else:
             # the user has made changes to the lgu selections so don't touch the selected
             # lgu's unless any of them belong to a country no longer selected. Filter those out.
             diff_lgu = [l for l in state_opt_lgu if l not in sel_lgu]
             keep_lgu = [l for l in all_lgu if l not in diff_lgu]
             lgu_all_selected = ['Select all'] if set(keep_lgu) == set(all_lgu) else []
-            return lgu_all_selected, all_lgu, keep_lgu
+            return lgu_all_selected, all_lgu_opt_dict, keep_lgu
     else:
         lgu_all_selected, sel_lgu = sync_select_all(lgu_all_selected, lgu_input, sel_lgu, all_lgu, triggered_id)
-        return lgu_all_selected, all_lgu, sel_lgu
+        return lgu_all_selected, all_lgu_opt_dict, sel_lgu
 
 @app.callback(
     Output(maa_select_all, 'value'),
@@ -152,21 +165,20 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu):
     Input(lgu_input, 'value'),
     State(maa_input, 'options')
 )
-def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
+def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    sel_lgu_id = lgu.query("lgu_name.isin(@sel_lgu)")['lgu_id']
-    all_maa = list(maa.query("lgu_id.isin(@sel_lgu_id)")['ma_id'])
-    all_maa_names = list(maa.query("lgu_id.isin(@sel_lgu_id)")['ma_name'])
+    all_maa = list(maa.query("lgu_id.isin(@sel_lgu)")['ma_id'])
+    all_maa_names = list(maa.query("lgu_id.isin(@sel_lgu)")['ma_name'])
     all_maa_opt_dict = [{'label': m_name, 'value': m} for m_name, m in zip(all_maa_names, all_maa)]
-    state_opt_maa_values = [d['value'] for d in state_opt_maa]
+    state_opt_maa = [d['value'] for d in state_opt_maa_dict]
 
     if triggered_id == lgu_input.id:
-        if set(state_opt_maa_values) == set(sel_maa):
+        if set(state_opt_maa) == set(sel_maa):
             maa_all_selected = ['Select all'] if sel_lgu != [] else []
             return maa_all_selected, all_maa_opt_dict, all_maa
         else:
-            diff_maa = [m for m in state_opt_maa_values if m not in sel_maa]
+            diff_maa = [m for m in state_opt_maa if m not in sel_maa]
             keep_maa = [m for m in all_maa if m not in diff_maa]
             maa_all_selected = ['Select all'] if set(keep_maa) == set(all_maa) else []
             return maa_all_selected, all_maa_opt_dict, keep_maa
@@ -175,6 +187,7 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa):
         return maa_all_selected, all_maa_opt_dict, sel_maa
 
 @app.callback(
+    Output(map, 'figure'),
     Output(catch_plot, 'figure'),
     Output(cpue_value_plot, 'figure'),
     Output(length_plot, 'figure'),
@@ -195,6 +208,9 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         date <= @end_date"
     )
 
+    map_data = get_map_data(filter_data, comm)
+    map_fig = make_map(map_data, mapbox_url)
+
     catch_data = get_catch_data(filter_data)
     catch_fig = make_catch_fig(catch_data)
 
@@ -207,7 +223,7 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     composition_data = get_composition_data(filter_data)
     composition_fig = make_composition_fig(composition_data)
 
-    return catch_fig, cpue_value_fig, length_fig, composition_fig
+    return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig
 
 @app.callback(
     Output('filter-inputs', 'style'),
