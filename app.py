@@ -15,6 +15,10 @@ from utils_plot import (
 from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, update_button, plot_div
 from utils_map import get_map_data, make_map, mapbox_url
 from mod_map import map, map_div
+from utils_highlights import (
+    create_card, get_total_weight, get_total_value, get_total_trips,
+    get_fishers, get_female, get_buyers
+)
 from mod_highlights import highlights_div
 from mod_dataworld import countries, snu, lgu, maa, comm, all_data
 
@@ -192,6 +196,7 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
     Output(cpue_value_plot, 'figure'),
     Output(length_plot, 'figure'),
     Output(composition_plot, 'figure'),
+    Output(highlights_div, 'children'),
     Input(update_button, 'n_clicks'),
     State(maa_input, 'value'),
     State(daterange_input, 'start_date'),
@@ -223,7 +228,16 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     composition_data = get_composition_data(filter_data)
     composition_fig = make_composition_fig(composition_data)
 
-    return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig
+    highlights_children = [
+        create_card(get_total_weight(filter_data), "Total weight (mt)"),
+        create_card("456.2K", "Total value (USD)"),
+        create_card("2.3K", "Total #trips"),
+        create_card("1.5K", "Fishers recorded"),
+        create_card("7", "Total female fishers"),
+        create_card("234", "Total buyers")
+    ]
+
+    return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
 
 @app.callback(
     Output('filter-inputs', 'style'),

@@ -78,10 +78,10 @@ maa_div = html.Div(children = [
 
 min_date = all_data['date'].min()
 max_date = all_data['date'].max()
-if max_date.month > 6:
-    start_date = datetime.date(max_date.year, max_date.month, 1)
+if max_date.month >= 6:
+    start_date = datetime.date(max_date.year, max_date.month - 5, 1)
 else:
-    start_date = datetime.date(max_date.year - 1, max_date.month + 6, 1)
+    start_date = datetime.date(max_date.year - 1, max_date.month + 7, 1)
 
 daterange_input = dcc.DatePickerRange(id='date-range-input',
         min_date_allowed = min_date,

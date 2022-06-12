@@ -110,7 +110,7 @@ maa['ma_lat'] = maa['ma_lat'].fillna(0)
 maa['ma_lon'] = maa['ma_lon'].fillna(0)
 maa = maa.dropna()
 
-comm = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'community_id', 'community_name', 'community_lat', 'community_lon']].drop_duplicates().reset_index(drop = True)
+comm = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'community_id', 'community_name', 'community_lat', 'community_lon', 'population']].drop_duplicates().reset_index(drop = True)
 comm = comm.query("~community_lat.isna() & ~community_lon.isna()")
 
 # choose start and end dates to initially show the past 6 months of data
@@ -124,3 +124,5 @@ init_data = all_data.query(
     @start_date <= date & \
     date <= @end_date"
 )
+if 'Aniniaw' in init_data['community_name']:
+    print("Aniniaw OK in init_data")
