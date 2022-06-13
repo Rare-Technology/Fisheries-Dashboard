@@ -121,9 +121,15 @@ filter_inputs_toggle_div = html.Div([
     id = "filter-inputs-toggle"
 )
 
-filter_div = html.Div([
-    filter_inputs_toggle_div,
-    filter_inputs_div
-    ],
-    id = "filters-container",
+update_button = html.Button(
+    children = html.H4('Apply filters'),
+    id = "update-button",
+    className = "btn btn-success"
+)
+
+filter_div = html.Div(
+    children = [
+        html.Div([filter_inputs_toggle_div, filter_inputs_div], id = "filters-container"),
+        update_button
+    ], style = {"z-index": "2"}
 )

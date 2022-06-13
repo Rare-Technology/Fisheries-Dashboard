@@ -6,11 +6,11 @@ from utils_highlights import (
 from mod_dataworld import init_data
 
 biomass_card = create_card(get_total_weight(init_data), "Total weight (mt)")
-value_card = create_card("456.2K", "Total value (USD)")
-trips_card = create_card("2.3K", "Total #trips")
-fishers_card = create_card("1.5K", "Fishers recorded")
-female_card = create_card("7", "Total female fishers")
-buyers_card = create_card("234", "Total buyers")
+value_card = create_card(get_total_value(init_data), "Total value (USD)")
+trips_card = create_card(get_total_trips(init_data), "Total #trips")
+fishers_card = create_card(get_fishers(init_data), "Fishers recorded")
+female_card = create_card(get_female(init_data), "Total female fishers")
+buyers_card = create_card(get_buyers(init_data), "Total buyers")
 
 highlights_div = html.Div(
     className = "card-group",

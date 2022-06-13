@@ -1,5 +1,4 @@
 from dash import html
-from mod_dataworld import fishers_data, init_data
 from utils_map import format_number
 
 def create_card(value, title):
@@ -22,16 +21,29 @@ def get_total_weight(data):
     return out
 
 def get_total_value(data):
-    pass
+    total_value = data['total_price_usd'].sum()
+    out = format_number(total_value)
+    return out
 
 def get_total_trips(data):
-    pass
+    # Idea: A buyer may have multiple transactions with a fisher in one day (for each
+    # species of fish caught). So one trip can be identified by a fisher on a given day.
+    # So to get the total # trips, count the number of unique fishers per day then take the sum
+    num_trips = data.groupby('date')['fisher_id'].nunique().sum()
+    out = format_number(num_trips)
+    return out
 
 def get_fishers(data):
-    pass
+    num_fishers = data['fisher_id'].nunique()
+    out = format_number(num_fishers)
+    return out
 
 def get_female(data):
-    pass
+    num_female = data.query("gender.isin(['f', 'F'])")['fisher_id'].nunique()
+    out = format_number(num_female)
+    return out
 
 def get_buyers(data):
-    pass
+    num_buyers = data['buyer_id'].nunique()
+    out = format_number(num_buyers)
+    return out

@@ -55,19 +55,17 @@ composition_plot = dcc.Graph(
     }
 )
 
-update_button = html.Button(children = 'Apply filters', className = "btn btn-primary")
-
-plot_div = html.Div([
-    update_button,
-    html.Br(),
-    html.Br(),
-    html.Div([
-        composition_plot,
-        catch_plot
-    ], style = {'width': '49.5%', 'float': 'left'}),
-    html.Div([
-        cpue_value_plot,
-        length_plot
-    ], style = {'width': '49.5%', 'float': 'right'})
-], style = {'width': '100%', 'height': '400px'}
+plot_div = html.Div(
+    children = [
+        html.Div([
+            composition_plot,
+            catch_plot
+        ], style = {'width': '49.5%', 'float': 'left'}),
+        html.Div([
+            cpue_value_plot,
+            length_plot
+        ], style = {'width': '49.5%', 'float': 'right'})
+    ],
+    style = {'width': '100%', 'height': '400px'},
+    className = 'container'
 )

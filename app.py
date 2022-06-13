@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output, State
 from utils_filters import sync_select_all
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
-    lgu_select_all, maa_input, maa_select_all, daterange_input, filter_div
+    lgu_select_all, maa_input, maa_select_all, daterange_input, update_button, filter_div
 )
 from utils_plot import (
     get_catch_data, make_catch_fig,
@@ -12,7 +12,7 @@ from utils_plot import (
     get_length_data, make_length_fig,
     get_composition_data, make_composition_fig
 )
-from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, update_button, plot_div
+from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, plot_div
 from utils_map import get_map_data, make_map, mapbox_url
 from mod_map import map, map_div
 from utils_highlights import (
@@ -49,7 +49,7 @@ app.layout = html.Div([
     highlights_div,
     html.Br(),
     plot_div
-], className = "container")
+])
 
 @app.callback(
     Output(country_select_all, 'value'),
@@ -230,11 +230,11 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
 
     highlights_children = [
         create_card(get_total_weight(filter_data), "Total weight (mt)"),
-        create_card("456.2K", "Total value (USD)"),
-        create_card("2.3K", "Total #trips"),
-        create_card("1.5K", "Fishers recorded"),
-        create_card("7", "Total female fishers"),
-        create_card("234", "Total buyers")
+        create_card(get_total_value(filter_data), "Total value (USD)"),
+        create_card(get_total_trips(filter_data), "Total #trips"),
+        create_card(get_fishers(filter_data), "Fishers recorded"),
+        create_card(get_female(filter_data), "Total female fishers"),
+        create_card(get_buyers(filter_data), "Total buyers"),
     ]
 
     return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children

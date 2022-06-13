@@ -66,10 +66,15 @@ def get_data(query_file_name, endpoint, request_method, params = None):
 
     return data
 
-fishers_data = get_data('join_fishers_footprint', 'query', 'GET')
-fishers_data = fishers_data[['date', 'ma_id', 'fisher_id', 'gender']].dropna()
-fishers_data['ma_id'] = fishers_data['ma_id'].astype(int)
-### may need to do more data cleaning
+fishers = get_data('join_fishers_footprint', 'query', 'GET')
+fishers = fishers[['fisher_id', 'gender']].drop_duplicates()
+# >>> fishers.head()
+#            fisher_id gender
+# 0  CN-MR-001978-2015      m
+# 1  CN-MR-001965-2015      m
+# 2  CN-MR-001967-2015      m
+# 3  CN-MR-001972-2015      m
+# 4  CN-MR-001962-2015      f
 
 all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 # >>> all_data.head()
@@ -89,9 +94,12 @@ all_data = get_data('join_ourfish_footprint_fishbase', 'query', 'GET')
 #        'species_scientific', 'species_local', 'is_focal', 'a', 'b', 'lmax'],
 #       dtype='object')
 # Takes approx 15s to get the query result
+all_data = all_data.dropna(subset = 'ma_id') # maybe add more in the future?
 all_data['date'] = all_data['date'].apply(datetime.date.fromisoformat)
 all_data['yearmonth'] = all_data['date'].apply(lambda x: datetime.date(x.year, x.month, 1))
-all_data['ma_id'] = all_data['ma_id'].apply(lambda x: -1 if np.isnan(x) else x).astype(int)
+all_data['ma_id'] = all_data['ma_id'].astype(int)
+
+all_data = all_data.join(fishers.set_index('fisher_id'), on = 'fisher_id')
 
 # countries = get_data('countries', 'query', 'GET')
 countries = all_data[['country_id', 'country']].drop_duplicates().rename(
@@ -124,5 +132,3 @@ init_data = all_data.query(
     @start_date <= date & \
     date <= @end_date"
 )
-if 'Aniniaw' in init_data['community_name']:
-    print("Aniniaw OK in init_data")

@@ -72,12 +72,12 @@ def make_map(map_data, mapbox_url):
     if 'Aniniaw' in map_data['community_name']:
         print("Aniniaw OK in make_map")
     hovertext_list = [
-        "Community: {}<br> \
-        Population: {}<br> \
-        Estimated fishers: {}<br> \
-        Estimated buyers: {}<br> \
-        Total catch weight (mt): {}<br> \
-        Total catch value (USD): {}<br> \
+        "Community: {}<br>\
+Population: {}<br>\
+Estimated fishers: {}<br>\
+Estimated buyers: {}<br>\
+Total catch weight (mt): {}<br>\
+Total catch value (USD): {}<br>\
         ".format(comm_name, pop, n_fisher, n_buyer, catch_weight, catch_value) \
         for comm_name, pop, n_fisher, n_buyer, catch_weight, catch_value \
         in map_data[['community_name', 'population', 'est_fishers', 'est_buyers', 'weight_mt', 'total_price_usd']].apply(tuple, axis = 1)
