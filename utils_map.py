@@ -1,10 +1,12 @@
 import plotly.graph_objects as go
-import configparser
 import numpy as np
+import os
 
-cfg = configparser.ConfigParser(interpolation = None)
-cfg.read('secret.ini')
-mapbox_url = cfg.get('mapbox', 'URL')
+# Conda is not doing well setting an environmental variable with an equals sign,
+# so getting the mapbox_url looks a bit clunky
+mapbox_url1 = os.environ['MAPBOX_URL1']
+mapbox_url2 = os.environ['MAPBOX_URL2']
+mapbox_url = mapbox_url1 + '=' + mapbox_url2
 
 def format_number(x):
     """
@@ -69,8 +71,6 @@ def get_map_data(data, comm):
 
 def make_map(map_data, mapbox_url):
     map_data[['population', 'est_fishers', 'est_buyers', 'weight_mt', 'total_price_usd']] = map_data[['population', 'est_fishers', 'est_buyers', 'weight_mt', 'total_price_usd']].applymap(format_number)
-    if 'Aniniaw' in map_data['community_name']:
-        print("Aniniaw OK in make_map")
     hovertext_list = [
         "Community: {}<br>\
 Population: {}<br>\

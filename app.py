@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
+from mod_dataworld import countries, snu, lgu, maa, comm, all_data
 from utils_filters import sync_select_all
 from mod_filters import (
     country_input, country_select_all, snu_input, snu_select_all, lgu_input,
@@ -20,10 +21,7 @@ from utils_highlights import (
     get_fishers, get_female, get_buyers
 )
 from mod_highlights import highlights_div
-from mod_dataworld import countries, snu, lgu, maa, comm, all_data
-
 import datetime
-
 
 external_scripts = [
     {
@@ -42,6 +40,7 @@ external_stylesheets = [
 ]
 
 app = Dash(__name__, external_stylesheets = external_stylesheets)
+server = app.server
 
 app.layout = html.Div([
     map_div,
@@ -252,4 +251,4 @@ def toggle_filter_display(n_clicks):
     return style
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)

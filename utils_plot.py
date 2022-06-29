@@ -52,7 +52,7 @@ def get_cpue_value_data(data):
     ]].groupby(
         by = ['yearmonth'],
     ).agg(
-        avg_cpue_kg_trip = ('weight_kg', 'mean'), # numbers differ slightly from old dashboard bc the query it pulls from uses SQL's APPROX_MEDIAN
+        avg_cpue_kg_trip = ('weight_kg', 'mean'),
         ste_cpue_kg_trip = ('weight_kg', 'sem'), # DataFrame.std() uses bias corrected stddev, pd.std does not
         avg_catch_value_usd = ('total_price_usd', 'mean'),
         ste_catch_value_usd = ('total_price_usd', 'sem')
@@ -61,7 +61,7 @@ def get_cpue_value_data(data):
 def get_length_data(data):
     """
     Extract length information using weight and ecological factors, then create dataframes
-    for calculating median lengths and proportion of mature population. Return the join of
+    for calculating average lengths and proportion of mature population. Return the join of
     these two datasets.
     """
     lengths = data.query(
@@ -86,14 +86,15 @@ def get_length_data(data):
         "~length_cm.isna()"
     ).reset_index(drop = True)
 
-    median_length_data = lengths.take(
-        lengths.index.repeat(
-            lengths['count']
-        )
+    avg_length_data = lengths.assign(
+        weighted_length = lambda x: x['length_cm'] * x['count']
     ).groupby(
         by = ['yearmonth']
     ).agg(
-        med_length_cm = ('length_cm', 'median')
+        weighted_length = ('weighted_length', 'sum'),
+        count = ('count', 'sum')
+    ).assign(
+        avg_length = lambda x: x['weighted_length'] / x['count']
     )
 
     lengths = lengths.query("~lmax.isna()").reset_index(drop = True)
@@ -111,7 +112,7 @@ def get_length_data(data):
         Pmat = lambda x: 100 * x['count_mature'] / x['count']
     ).loc[:, ['Pmat']]
 
-    length_data = prop_mature.join(median_length_data, how = 'inner').reset_index()
+    length_data = prop_mature.join(avg_length_data['avg_length'], how = 'inner').reset_index()
 
     return length_data
 
@@ -211,8 +212,8 @@ def make_length_fig(length_data):
     fig.add_trace(
         go.Scatter(
             x = length_data['yearmonth'],
-            y = length_data['med_length_cm'],
-            name = 'Median length',
+            y = length_data['avg_length'],
+            name = 'Average length',
             marker_color = COLORS['rare-blue']
         ), secondary_y = False
     )
@@ -225,13 +226,13 @@ def make_length_fig(length_data):
         ), secondary_y = True
     )
     fig.update_layout(
-        title = 'Median Length and Proportion of Mature Catch',
+        title = 'Average Length and Proportion of Mature Catch',
         xaxis_title = '',
         xaxis = {
             'zerolinecolor': '#ffffff'
         },
         yaxis = {
-            'title': 'Median Length (cm)',
+            'title': 'Average Length (cm)',
             'titlefont': {
                 'color': COLORS['rare-blue']
             },
