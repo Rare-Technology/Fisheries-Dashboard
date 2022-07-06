@@ -2,11 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 import os
 
-# Conda is not doing well setting an environmental variable with an equals sign,
-# so getting the mapbox_url looks a bit clunky
-mapbox_url1 = os.environ['MAPBOX_URL1']
-mapbox_url2 = os.environ['MAPBOX_URL2']
-mapbox_url = mapbox_url1 + '=' + mapbox_url2
+mapbox_url = os.environ['MAPBOX_URL']
 
 def format_number(x):
     """

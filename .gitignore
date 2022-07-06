@@ -1,3 +1,5 @@
 __pycache__*
 secret.ini
 .DS_Store*
+.env
+*.pyc
