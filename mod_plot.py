@@ -12,7 +12,7 @@ catch_data = get_catch_data(init_data)
 catch_fig = make_catch_fig(catch_data)
 catch_plot = dcc.Graph(
     id = 'catches-plot',
-    className = "pretty_container",
+    className = "mb-4",
     figure = catch_fig,
     config = {
         'modeBarButtonsToRemove': ['select', 'lasso2d'],
@@ -24,7 +24,7 @@ cpue_value_data = get_cpue_value_data(init_data)
 cpue_value_fig = make_cpue_value_fig(cpue_value_data)
 cpue_value_plot = dcc.Graph(
     id = 'cpue-value-plot',
-    className = "pretty_container mb-4",
+    className = "mb-4",
     figure = cpue_value_fig,
     config = {
         'modeBarButtonsToRemove': ['select', 'lasso2d'],
@@ -36,7 +36,7 @@ length_data = get_length_data(init_data)
 length_fig = make_length_fig(length_data)
 length_plot = dcc.Graph(
     id = 'length-plot',
-    className = "pretty_container",
+    # className = "pretty_container",
     figure = length_fig,
     config = {
         'modeBarButtonsToRemove': ['select', 'lasso2d'],
@@ -48,24 +48,35 @@ composition_data = get_composition_data(init_data)
 composition_fig = make_composition_fig(composition_data)
 composition_plot = dcc.Graph(
     id = 'composition-plot',
-    className = "pretty_container mb-4",
+    className = "mb-4",
     figure = composition_fig,
     config = {
         'displaylogo': False
     }
 )
 
-plot_div = html.Div(
+plot_toggle_div = html.Div(
+    id = "plots-toggle",
     children = [
-        html.Div([
-            composition_plot,
-            catch_plot
-        ], style = {'width': '49.5%', 'float': 'left'}),
-        html.Div([
-            cpue_value_plot,
-            length_plot
-        ], style = {'width': '49.5%', 'float': 'right'})
-    ],
-    style = {'width': '100%', 'height': '400px'},
-    className = 'container'
+        html.H3("Charts", style = {"display": "inline"}),
+        html.Span(
+            [html.Span(className = "Select-arrow")],
+            className = "Select-arrow-zone dropdown-arrow"
+        )
+    ]
+)
+
+plot_displays_div = html.Div(
+    id = "plot-displays",
+    children = [
+        composition_plot,
+        catch_plot,
+        cpue_value_plot,
+        length_plot
+    ]
+)
+
+plot_div = html.Div(
+    id = "plots-container",
+    children = [plot_toggle_div, plot_displays_div]
 )

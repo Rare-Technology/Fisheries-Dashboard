@@ -41,13 +41,11 @@ external_stylesheets = [
 
 app = Dash(__name__, external_stylesheets = external_stylesheets)
 server = app.server
-
 app.layout = html.Div([
     map_div,
     filter_div,
-    highlights_div,
-    html.Br(),
-    plot_div
+    plot_div,
+    highlights_div
 ])
 
 @app.callback(
@@ -247,6 +245,18 @@ def toggle_filter_display(n_clicks):
         style = {"display": "none"}
     else:
         style = {"display": "block"}
+
+    return style
+
+@app.callback(
+    Output('plot-displays', 'style'),
+    Input('plots-toggle', 'n_clicks')
+)
+def toggle_plot_display(n_clicks):
+    if n_clicks is None or n_clicks % 2 == 0:
+        style = {"display": "block"}
+    else:
+        style = {"display": "none"}
 
     return style
 

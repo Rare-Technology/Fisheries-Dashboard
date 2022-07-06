@@ -21,7 +21,7 @@ pretty_template = {
         },
         'xaxis': {
             'gridcolor': COLORS['rare-gray']
-        },
+        }
     }
 }
 
@@ -148,7 +148,7 @@ def make_catch_fig(catch_data):
     fig.update_layout(
         title = "Total Catch per Month (metric tons)",
         xaxis_title = "",
-        template = pretty_template
+        height = 400
     )
 
     fig.update_xaxes(fixedrange = True)
@@ -162,7 +162,7 @@ def make_cpue_value_fig(cpue_value_data):
         go.Scatter(
             x = cpue_value_data['yearmonth'],
             y = cpue_value_data['avg_cpue_kg_trip'],
-            name = 'CPUE',
+            name = 'CPUE (kg/trip)',
             marker_color = COLORS['rare-blue'],
             yaxis = 'y'
         ), secondary_y = False
@@ -171,7 +171,7 @@ def make_cpue_value_fig(cpue_value_data):
         go.Scatter(
             x = cpue_value_data['yearmonth'],
             y = cpue_value_data['avg_catch_value_usd'],
-            name = 'Catch Value',
+            name = 'Catch Value (USD/trip)',
             marker_color = COLORS['secondary-red'],
             yaxis = 'y2'
         ), secondary_y = True
@@ -180,7 +180,6 @@ def make_cpue_value_fig(cpue_value_data):
         title = 'Average CPUE and Catch Value per Trip',
         xaxis_title = '',
         yaxis = {
-            'title': 'CPUE (kg/trip)',
             'titlefont': {
                 'color': COLORS['rare-blue']
             },
@@ -190,7 +189,6 @@ def make_cpue_value_fig(cpue_value_data):
             'nticks': 4
         },
         yaxis2 = {
-            'title': 'Catch Value (USD/trip)',
             'titlefont': {
                 'color': COLORS['secondary-red']
             },
@@ -199,7 +197,10 @@ def make_cpue_value_fig(cpue_value_data):
             },
             'nticks': 4
         },
-        template = pretty_template
+        legend = {
+            'orientation': 'h'
+        },
+        height = 400
     )
 
     fig.update_xaxes(fixedrange = True)
@@ -213,7 +214,7 @@ def make_length_fig(length_data):
         go.Scatter(
             x = length_data['yearmonth'],
             y = length_data['avg_length'],
-            name = 'Average length',
+            name = 'Average length (cm)',
             marker_color = COLORS['rare-blue']
         ), secondary_y = False
     )
@@ -226,13 +227,12 @@ def make_length_fig(length_data):
         ), secondary_y = True
     )
     fig.update_layout(
-        title = 'Average Length and Proportion of Mature Catch',
+        title = 'Average Length and % Mature',
         xaxis_title = '',
         xaxis = {
             'zerolinecolor': '#ffffff'
         },
         yaxis = {
-            'title': 'Average Length (cm)',
             'titlefont': {
                 'color': COLORS['rare-blue']
             },
@@ -241,7 +241,6 @@ def make_length_fig(length_data):
             }
         },
         yaxis2 = {
-            'title': '% Mature',
             'titlefont': {
                 'color': COLORS['secondary-red']
             },
@@ -249,7 +248,8 @@ def make_length_fig(length_data):
                 'color': COLORS['secondary-red']
             },
         },
-        template = pretty_template
+        legend = {'orientation': 'h'},
+        height = 400
     )
 
     fig.update_xaxes(fixedrange = True)
@@ -277,7 +277,7 @@ def make_composition_fig(comp_data):
 
     fig.update_layout(
         title = "Catch Composition (Top 10, metric tons)",
-        template = pretty_template
+        legend = {'orientation': 'h'}
     )
 
     return fig

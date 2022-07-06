@@ -120,7 +120,7 @@ Total catch value (USD): {}<br>\
             'b': 0,
             'l': 0
         },
-        height = 600
+        height = 1000
     )
 
     return fig

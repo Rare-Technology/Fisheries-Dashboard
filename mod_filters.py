@@ -114,8 +114,7 @@ filter_inputs_toggle_div = html.Div([
         html.H3("Filters", style = {"display": "inline"}),
         html.Span(
             [html.Span(className = "Select-arrow")],
-            className = "Select-arrow-zone",
-            id = "filter-inputs-arrow"
+            className = "Select-arrow-zone dropdown-arrow"
         )
     ],
     id = "filter-inputs-toggle"
@@ -127,9 +126,7 @@ update_button = html.Button(
     className = "btn btn-success"
 )
 
-filter_div = html.Div(
-    children = [
+filter_div = html.Div([
         html.Div([filter_inputs_toggle_div, filter_inputs_div], id = "filters-container"),
         update_button
-    ], style = {"z-index": "2"}
-)
+])
