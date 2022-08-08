@@ -255,6 +255,7 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         create_card(highlights_data.loc[0, 'buyers'], "Total buyers"),
     ]
 
+    print(data)
     data['Totals'] = highlights_data
     data['Catch'] = catch_data
     data['CPUE-Value'] = cpue_value_data
@@ -329,7 +330,7 @@ def trigger_download(n_clicks, sel_country, sel_snu, sel_lgu, sel_maa, start_dat
     writer.save()
     output_data = output.getvalue()
     output.close()
-    
+
     return dcc.send_bytes(output_data, 'fisheries-data.xlsx')
 
 if __name__ == '__main__':
