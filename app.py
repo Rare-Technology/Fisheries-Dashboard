@@ -328,7 +328,8 @@ def trigger_download(n_clicks, sel_country, sel_snu, sel_lgu, sel_maa, start_dat
 
     writer.save()
     output_data = output.getvalue()
-
+    output.close()
+    
     return dcc.send_bytes(output_data, 'fisheries-data.xlsx')
 
 if __name__ == '__main__':
