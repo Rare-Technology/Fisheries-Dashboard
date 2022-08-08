@@ -2,7 +2,22 @@ import plotly.graph_objects as go
 import numpy as np
 import os
 
-mapbox_url = os.environ['MAPBOX_URL']
+### Dumb issue... we need the mapbox url which is saved as an environment variable
+# On production server (heroku) this is no problem, just call os.environ['MAPBOX_URL']
+# On development, my conda env does not export the environment variable correctly.
+# This is because of the equals sign. So, the mapbox url is split in two and the
+# equals sign is manually added (see else block below)
+# I tried the following:
+# - Escape with \
+# - Escape with ^
+# - Use single quotation marks instead of double
+# - Setting up (de)activate.d w/ env_vars.sh in conda env (see https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html#macos-and-linux)
+# Nothing worked and I don't want to waste any more time on this issue
+is_production = os.environ['IS_PRODUCTION']
+if is_production == 'True':
+    mapbox_url = os.environ['MAPBOX_URL']
+else:
+    mapbox_url = os.environ['MAPBOX_URL1'] + '=' + os.environ['MAPBOX_URL2']
 
 def format_number(x):
     """

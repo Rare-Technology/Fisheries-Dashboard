@@ -5,6 +5,11 @@ import numpy as np
 import json
 import datetime
 
+### TODO:
+# Compile list of demo accounts (typically buyers I think)
+# Filter out transactions with these accounts
+# demoMAR
+
 fishers = pd.read_csv('https://query.data.world/s/q4i5ndlwyhoqkcjpfee5buncfu5icn')
 fishers = fishers[['fisher_id', 'gender']].drop_duplicates()
 # >>> fishers.head()
@@ -34,7 +39,7 @@ all_data = pd.read_csv('https://query.data.world/s/43qwgxsrhlmxvpumqqb3wifgfmaws
 #        'species_scientific', 'species_local', 'is_focal', 'a', 'b', 'lmax'],
 #       dtype='object')
 # Takes approx 15s to get the query result
-all_data = all_data.dropna(subset = 'ma_id') # maybe add more in the future?
+all_data = all_data.dropna(subset = ['ma_id']) # maybe add more in the future?
 all_data['date'] = all_data['date'].apply(datetime.date.fromisoformat)
 all_data['yearmonth'] = all_data['date'].apply(lambda x: datetime.date(x.year, x.month, 1))
 all_data['ma_id'] = all_data['ma_id'].astype(int)

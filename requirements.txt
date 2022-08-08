@@ -16,6 +16,7 @@ dash-table==5.0.0
 datadotworld==1.8.2
 datapackage==1.15.2
 et-xmlfile==1.1.0
+filprofiler==2022.6.0
 Flask==2.1.1
 Flask-Compress==1.11
 greenlet==1.1.2
@@ -32,10 +33,12 @@ jsonpointer==2.3
 jsonschema==4.4.0
 linear-tsv==1.1.0
 MarkupSafe==2.1.1
+memory-profiler==0.60.0
 numpy==1.22.3
 openpyxl==3.0.9
 pandas==1.4.2
 plotly==5.7.0
+psutil==5.9.1
 pyrsistent==0.18.1
 python-dateutil==2.8.2
 pytz==2022.1
@@ -47,8 +50,10 @@ SQLAlchemy==1.4.35
 tableschema==1.20.2
 tabulator==1.53.5
 tenacity==8.0.1
+threadpoolctl==3.1.0
 unicodecsv==0.14.1
 urllib3==1.26.9
 Werkzeug==2.1.1
 xlrd==2.0.1
+XlsxWriter==3.0.3
 zipp==3.8.0

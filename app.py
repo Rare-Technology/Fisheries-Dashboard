@@ -13,7 +13,10 @@ from utils_plot import (
     get_length_data, make_length_fig,
     get_composition_data, make_composition_fig
 )
-from mod_plot import catch_plot, cpue_value_plot, length_plot, composition_plot, plot_div
+from mod_plot import (
+    init_catch_data, init_cpue_value_data, init_length_data, init_composition_data,
+    catch_plot, cpue_value_plot, length_plot, composition_plot, plot_div
+)
 from utils_map import get_map_data, make_map, mapbox_url
 from mod_map import map, map_div
 from utils_highlights import (
@@ -21,7 +24,10 @@ from utils_highlights import (
     get_fishers, get_female, get_buyers
 )
 from mod_highlights import highlights_div
+from mod_download import download_div
 import datetime
+import io
+import pandas as pd
 
 external_scripts = [
     {
@@ -45,8 +51,16 @@ app.layout = html.Div([
     map_div,
     filter_div,
     plot_div,
+    download_div,
     highlights_div
 ])
+
+data = {
+    'catch': init_catch_data,
+    'cpue_value': init_cpue_value_data,
+    'length': init_length_data,
+    'composition': init_composition_data
+}
 
 @app.callback(
     Output(country_select_all, 'value'),
@@ -234,6 +248,11 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         create_card(get_buyers(filter_data), "Total buyers"),
     ]
 
+    data['catch'] = catch_data
+    data['cpue_value'] = cpue_value_data
+    data['length'] = length_data
+    data['composition'] = composition_data
+
     return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
 
 @app.callback(
@@ -259,6 +278,24 @@ def toggle_plot_display(n_clicks):
         style = {"display": "none"}
 
     return style
+
+@app.callback(
+    Output('download-data', 'data'),
+    Input('btn-download', 'n_clicks'),
+    prevent_initial_call = True
+)
+def trigger_download(n_clicks):
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine = 'xlsxwriter')
+
+    for d in data.items():
+        # d: ('df_name', df)
+        d[1].to_excel(writer, sheet_name = d[0], index = False)
+
+    writer.save()
+    output_data = output.getvalue()
+
+    return dcc.send_bytes(output_data, 'fisheries-data.xlsx')
 
 if __name__ == '__main__':
     app.run_server(debug=False)

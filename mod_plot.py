@@ -8,8 +8,8 @@ from utils_plot import (
     get_composition_data, make_composition_fig
 )
 
-catch_data = get_catch_data(init_data)
-catch_fig = make_catch_fig(catch_data)
+init_catch_data = get_catch_data(init_data)
+catch_fig = make_catch_fig(init_catch_data)
 catch_plot = dcc.Graph(
     id = 'catches-plot',
     className = "mb-4",
@@ -20,8 +20,8 @@ catch_plot = dcc.Graph(
     }
 )
 
-cpue_value_data = get_cpue_value_data(init_data)
-cpue_value_fig = make_cpue_value_fig(cpue_value_data)
+init_cpue_value_data = get_cpue_value_data(init_data)
+cpue_value_fig = make_cpue_value_fig(init_cpue_value_data)
 cpue_value_plot = dcc.Graph(
     id = 'cpue-value-plot',
     className = "mb-4",
@@ -32,8 +32,8 @@ cpue_value_plot = dcc.Graph(
     }
 )
 
-length_data = get_length_data(init_data)
-length_fig = make_length_fig(length_data)
+init_length_data = get_length_data(init_data)
+length_fig = make_length_fig(init_length_data)
 length_plot = dcc.Graph(
     id = 'length-plot',
     # className = "pretty_container",
@@ -44,8 +44,8 @@ length_plot = dcc.Graph(
     }
 )
 
-composition_data = get_composition_data(init_data)
-composition_fig = make_composition_fig(composition_data)
+init_composition_data = get_composition_data(init_data)
+composition_fig = make_composition_fig(init_composition_data)
 composition_plot = dcc.Graph(
     id = 'composition-plot',
     className = "mb-4",
