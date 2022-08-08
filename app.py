@@ -256,12 +256,12 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     ]
 
     global data
+    print(data)
     data['Totals'] = highlights_data
     data['Catch'] = catch_data
     data['CPUE-Value'] = cpue_value_data
     data['Length'] = length_data
     data['Composition'] = composition_data
-    print(data)
 
     return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
 
