@@ -102,6 +102,18 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
     margin-top: 10px;
 }
 
+#download-container {
+  z-index: 2;
+  position: absolute;
+  bottom: 15%;
+  left: 37.5%;
+  width: 25%;
+}
+
+#btn-download {
+  width: 100%
+}
+
 #highlights-container {
     z-index: 2;
     padding: 5px;

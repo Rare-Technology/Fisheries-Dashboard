@@ -21,27 +21,31 @@ from utils_map import get_map_data, make_map, mapbox_url
 from mod_map import map, map_div
 from utils_highlights import (
     create_card, get_total_weight, get_total_value, get_total_trips,
-    get_fishers, get_female, get_buyers
+    get_fishers, get_female, get_buyers, get_highlights_data
 )
-from mod_highlights import highlights_div
+from mod_highlights import highlights_div, init_highlights_data
 from mod_download import download_div
 import datetime
 import io
 import pandas as pd
 
-external_scripts = [
-    {
-        'src': "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
-        'integrity': "sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p",
-        'crossorigin': "anonymous"
-    }
-]
+# Importing bootstrap 4; Why 4 and not 5? The hover on v4's buttons is better! The change in color
+# is actually noticeable. v5's buttons (the lighter colors) you can't even tell if there's
+# a change on hover. Not great for the download button
 external_stylesheets = [
     {
-        'href': 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css',
+        'href': 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css',
         'rel': 'stylesheet',
-        'integrity': 'sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3',
+        'integrity': 'sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N',
         'crossorigin': 'anonymous'
+    }
+]
+
+external_scripts = [
+    {
+        'src': "https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js",
+        'integrity': "sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct",
+        'crossorigin': "anonymous"
     }
 ]
 
@@ -56,10 +60,11 @@ app.layout = html.Div([
 ])
 
 data = {
-    'catch': init_catch_data,
-    'cpue_value': init_cpue_value_data,
-    'length': init_length_data,
-    'composition': init_composition_data
+    'Totals': init_highlights_data,
+    'Catch': init_catch_data,
+    'CPUE-Value': init_cpue_value_data,
+    'Length': init_length_data,
+    'Composition': init_composition_data
 }
 
 @app.callback(
@@ -239,19 +244,22 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     composition_data = get_composition_data(filter_data)
     composition_fig = make_composition_fig(composition_data)
 
+    highlights_data = get_highlights_data(filter_data)
+
     highlights_children = [
-        create_card(get_total_weight(filter_data), "Total weight (mt)"),
-        create_card(get_total_value(filter_data), "Total value (USD)"),
-        create_card(get_total_trips(filter_data), "Total #trips"),
-        create_card(get_fishers(filter_data), "Fishers recorded"),
-        create_card(get_female(filter_data), "Total female fishers"),
-        create_card(get_buyers(filter_data), "Total buyers"),
+        create_card(highlights_data.loc[0, 'weight'], "Total weight (mt)"),
+        create_card(highlights_data.loc[0, 'value'], "Total value (USD)"),
+        create_card(highlights_data.loc[0, 'trips'], "Total #trips"),
+        create_card(highlights_data.loc[0, 'fishers'], "Fishers recorded"),
+        create_card(highlights_data.loc[0, 'female buyers'], "Total female buyers"),
+        create_card(highlights_data.loc[0, 'buyers'], "Total buyers"),
     ]
 
-    data['catch'] = catch_data
-    data['cpue_value'] = cpue_value_data
-    data['length'] = length_data
-    data['composition'] = composition_data
+    data['Totals'] = highlights_data
+    data['Catch'] = catch_data
+    data['CPUE-Value'] = cpue_value_data
+    data['Length'] = length_data
+    data['Composition'] = composition_data
 
     return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
 
@@ -282,15 +290,41 @@ def toggle_plot_display(n_clicks):
 @app.callback(
     Output('download-data', 'data'),
     Input('btn-download', 'n_clicks'),
+    State(country_input, 'value'),
+    State(snu_input, 'value'),
+    State(lgu_input, 'value'),
+    State(maa_input, 'value'),
+    State(daterange_input, 'start_date'),
+    State(daterange_input, 'end_date'),
     prevent_initial_call = True
 )
-def trigger_download(n_clicks):
+def trigger_download(n_clicks, sel_country, sel_snu, sel_lgu, sel_maa, start_date, end_date):
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine = 'xlsxwriter')
 
     for d in data.items():
         # d: ('df_name', df)
         d[1].to_excel(writer, sheet_name = d[0], index = False)
+
+    # Before finishing, we'll add metadata. And before that, we need names for geographic info,
+    # not just the id's
+
+    snu_names = list(snu.query("snu_id.isin(@sel_snu)")['snu_name'])
+    lgu_names = list(lgu.query("lgu_id.isin(@sel_lgu)")['lgu_name'])
+    maa_names = list(maa.query("ma_id.isin(@sel_maa)")['ma_name'])
+
+    metadata = pd.DataFrame({
+        'FILTER': ['country', 'snu', 'lgu', 'maa', 'start date', 'end date'],
+        'VALUE': [
+            ', '.join(sel_country),
+            ', '.join(snu_names),
+            ', '.join(lgu_names),
+            ', '.join(maa_names),
+            start_date, end_date
+        ]
+    })
+
+    metadata.to_excel(writer, sheet_name = 'metadata', index = False)
 
     writer.save()
     output_data = output.getvalue()

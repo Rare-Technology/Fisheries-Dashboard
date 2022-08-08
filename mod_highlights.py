@@ -1,16 +1,18 @@
 from dash import dcc, html
 from utils_highlights import (
     create_card, get_total_weight, get_total_value, get_total_trips,
-    get_fishers, get_female, get_buyers
+    get_fishers, get_female, get_buyers, get_highlights_data
 )
 from mod_dataworld import init_data
 
-biomass_card = create_card(get_total_weight(init_data), "Total weight (mt)")
-value_card = create_card(get_total_value(init_data), "Total value (USD)")
-trips_card = create_card(get_total_trips(init_data), "Total #trips")
-fishers_card = create_card(get_fishers(init_data), "Fishers recorded")
-female_card = create_card(get_female(init_data), "Total female fishers")
-buyers_card = create_card(get_buyers(init_data), "Total buyers")
+init_highlights_data = get_highlights_data(init_data)
+
+biomass_card = create_card(init_highlights_data.loc[0, 'weight'], "Total weight (mt)")
+value_card = create_card(init_highlights_data.loc[0, 'value'], "Total value (USD)")
+trips_card = create_card(init_highlights_data.loc[0, 'trips'], "Total #trips")
+fishers_card = create_card(init_highlights_data.loc[0, 'fishers'], "Fishers recorded")
+female_card = create_card(init_highlights_data.loc[0, 'female buyers'], "Total female buyers")
+buyers_card = create_card(init_highlights_data.loc[0, 'buyers'], "Total buyers")
 
 highlights_div = html.Div(
     className = "card-group",
