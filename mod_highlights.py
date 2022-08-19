@@ -7,12 +7,12 @@ from mod_dataworld import init_data
 
 init_highlights_data = get_highlights_data(init_data)
 
-biomass_card = create_card(init_highlights_data.loc[0, 'weight'], "Total weight (mt)")
-value_card = create_card(init_highlights_data.loc[0, 'value'], "Total value (USD)")
-trips_card = create_card(init_highlights_data.loc[0, 'trips'], "Total #trips")
+biomass_card = create_card(init_highlights_data.loc[0, 'weight'], "Catch weight (tonnes)")
+value_card = create_card(init_highlights_data.loc[0, 'value'], "Catch value (USD)")
+trips_card = create_card(init_highlights_data.loc[0, 'trips'], "Fishing trips")
 fishers_card = create_card(init_highlights_data.loc[0, 'fishers'], "Fishers recorded")
-female_card = create_card(init_highlights_data.loc[0, 'female buyers'], "Total female buyers")
-buyers_card = create_card(init_highlights_data.loc[0, 'buyers'], "Total buyers")
+buyers_card = create_card(init_highlights_data.loc[0, 'buyers'], "Buyers")
+female_card = create_card(init_highlights_data.loc[0, 'female buyers'], "Female buyers")
 
 highlights_div = html.Div(
     className = "card-group",
@@ -22,7 +22,7 @@ highlights_div = html.Div(
         value_card,
         trips_card,
         fishers_card,
-        female_card,
-        buyers_card
+        buyers_card,
+        female_card
     ]
 )

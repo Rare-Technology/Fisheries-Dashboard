@@ -251,8 +251,8 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         create_card(highlights_data.loc[0, 'value'], "Total value (USD)"),
         create_card(highlights_data.loc[0, 'trips'], "Total #trips"),
         create_card(highlights_data.loc[0, 'fishers'], "Fishers recorded"),
-        create_card(highlights_data.loc[0, 'female buyers'], "Total female buyers"),
         create_card(highlights_data.loc[0, 'buyers'], "Total buyers"),
+        create_card(highlights_data.loc[0, 'female buyers'], "Total female buyers"),
     ]
 
     global data

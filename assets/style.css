@@ -102,10 +102,17 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
     margin-top: 10px;
 }
 
+@media only screen and (min-width: 1260px) {
+  #download-container {
+    bottom: 110px !important;
+  }
+}
+
+
 #download-container {
   z-index: 2;
   position: absolute;
-  bottom: 15%;
+  bottom: 125px;
   left: 37.5%;
   width: 25%;
 }
@@ -121,8 +128,7 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
     border-radius: 5px;
     text-align: center;
     position: absolute;
-    top: auto;
-    bottom: 5%;
+    bottom: 15px;
     left: 13.5%;
     width: 73%;
 }
