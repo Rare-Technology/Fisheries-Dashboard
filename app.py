@@ -50,6 +50,26 @@ external_scripts = [
 ]
 
 app = Dash(__name__, external_stylesheets = external_stylesheets)
+app.index_string = """
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        <div class="._dash-loading"><div></div><div></div><div></div></div>
+    </body>
+    {%app_entry%}
+    <footer>
+        {%config%}
+        {%scripts%}
+        {%renderer%}
+    </footer>
+</html>
+"""
 server = app.server
 app.layout = html.Div([
     map_div,
