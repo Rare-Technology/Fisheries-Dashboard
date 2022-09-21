@@ -60,7 +60,7 @@ app.index_string = """
         {%css%}
     </head>
     <body>
-        <div class="._dash-loading"><div></div><div></div><div></div></div>
+        <div class="_dash-loading"><div></div><div></div><div></div></div>
     </body>
     {%app_entry%}
     <footer>
