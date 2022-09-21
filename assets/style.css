@@ -28,7 +28,7 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
 }
 
 #filter-inputs {
-  height: 600px;
+  height: 400px;
   overflow-y: scroll;
   margin-top: 10px;
 }
@@ -97,7 +97,7 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
 }
 
 #plot-displays {
-    height: 600px;
+    height: 400px;
     overflow-y: scroll;
     margin-top: 10px;
 }

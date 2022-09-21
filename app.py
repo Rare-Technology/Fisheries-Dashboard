@@ -207,7 +207,6 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
         return maa_all_selected, all_maa_opt_dict, sel_maa
 
 @app.callback(
-    Output(map, 'figure'),
     Output(catch_plot, 'figure'),
     Output(cpue_value_plot, 'figure'),
     Output(length_plot, 'figure'),
@@ -228,9 +227,6 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         @start_date <= date & \
         date <= @end_date"
     )
-
-    map_data = get_map_data(filter_data, comm)
-    map_fig = make_map(map_data, mapbox_url)
 
     catch_data = get_catch_data(filter_data)
     catch_fig = make_catch_fig(catch_data)
@@ -256,14 +252,58 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
     ]
 
     global data
-    print(data)
+
     data['Totals'] = highlights_data
     data['Catch'] = catch_data
     data['CPUE-Value'] = cpue_value_data
     data['Length'] = length_data
     data['Composition'] = composition_data
 
-    return map_fig, catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
+    return catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
+
+@app.callback(
+    Output(map, 'figure'),
+    Input(map, 'clickData'),
+    Input(update_button, 'n_clicks'),
+    State(maa_input, 'value'),
+    State(daterange_input, 'start_date'),
+    State(daterange_input, 'end_date'),
+    prevent_initial_call = True
+)
+def update_map(mapClickData, update_clicks, sel_maa, start_date, end_date):
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == map.id:
+        # zoom in on the point that was clicked
+        sel_lat = mapClickData['points'][0]['lat']
+        sel_lon = mapClickData['points'][0]['lon']
+
+        fig = map.figure
+        fig.update_layout(
+            mapbox = {
+                'center': {
+                    'lat': sel_lat,
+                    'lon': sel_lon,
+                },
+                'zoom': 5
+            }
+        )
+    elif triggered_id == update_button.id:
+        # Update points and fit the zoom to the filtered points
+        start_date = datetime.date.fromisoformat(start_date)
+        end_date = datetime.date.fromisoformat(end_date)
+
+        filter_data = all_data.query(
+            "ma_id.isin(list(@sel_maa)) & \
+            @start_date <= date & \
+            date <= @end_date"
+        )
+
+        map_data = get_map_data(filter_data, comm)
+        fig = make_map(map_data, mapbox_url)
+
+    return fig
 
 @app.callback(
     Output('filter-inputs', 'style'),

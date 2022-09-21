@@ -94,6 +94,11 @@ Total catch value (USD): {}<br>\
         in map_data[['community_name', 'population', 'est_fishers', 'est_buyers', 'weight_mt', 'total_price_usd']].apply(tuple, axis = 1)
     ]
 
+    ########## # TODO
+    # Tweak the parameters here... like the 1, 5, and 15
+    # Where did this equation come from? I made it up. It works OK as it is rn tbh, but could be better
+    zoom_level = max(1, round(5 - map_data['community_lat'].std() * map_data['community_lon'].std() / 15))
+
     fig = go.Figure()
     fig.add_trace(go.Scattermapbox(
         lat = map_data['community_lat'], lon = map_data['community_lon'],
@@ -124,6 +129,13 @@ Total catch value (USD): {}<br>\
                 'source': [mapbox_url]
             }
         ],
+        mapbox = {
+            'center': {
+                'lat': map_data['community_lat'].mean(),
+                'lon': map_data['community_lon'].mean()
+            },
+            'zoom': zoom_level
+        },
         showlegend = False,
         margin = {
             't': 0,
