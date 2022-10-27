@@ -10,9 +10,9 @@ fig = make_map(map_data, mapbox_url)
 
 map = dcc.Graph(
     id = 'fish-map',
-    className = "mb-5",
     figure = fig,
-    config = {'displayModeBar': False}
+    config = {'displayModeBar': False},
+    style = {"height": "calc(100vh)"}
 )
 map_div = html.Div(
     [map],
