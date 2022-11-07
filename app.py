@@ -1,30 +1,26 @@
-# -*- coding: utf-8 -*-
+"date-range-input"# -*- coding: utf-8 -*-
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
-from mod_dataworld import countries, snu, lgu, maa, comm, all_data
+from mod_dataworld import process_init_data
 from utils_filters import sync_select_all
-from mod_filters import (
-    country_input, country_select_all, snu_input, snu_select_all, lgu_input,
-    lgu_select_all, maa_input, maa_select_all, daterange_input, update_button, filter_div
-)
+from mod_filters import start_filters
+
 from utils_plot import (
     get_catch_data, make_catch_fig,
     get_cpue_value_data, make_cpue_value_fig,
     get_length_data, make_length_fig,
     get_composition_data, make_composition_fig
 )
-from mod_plot import (
-    init_catch_data, init_cpue_value_data, init_length_data, init_composition_data,
-    catch_plot, cpue_value_plot, length_plot, composition_plot, plot_div
-)
+from mod_plot import start_plot
+
 from utils_map import get_map_data, make_map, mapbox_url
-from mod_map import map, map_div
+from mod_map import start_map
 from utils_highlights import (
     create_card, get_total_weight, get_total_value, get_total_trips,
     get_fishers, get_female, get_buyers, get_highlights_data
 )
-from mod_highlights import highlights_div, init_highlights_data
-from mod_download import download_div
+from mod_highlights import start_highlights
+from mod_download import start_download_button
 import datetime
 import io
 import pandas as pd
@@ -77,27 +73,55 @@ app.index_string = """
 </html>
 """
 server = app.server
-app.layout = html.Div([
-    map_div,
-    filter_div,
-    plot_div,
-    download_div,
-    highlights_div
-])
 
-data = {
-    'Totals': init_highlights_data,
-    'Catch': init_catch_data,
-    'CPUE-Value': init_cpue_value_data,
-    'Length': init_length_data,
-    'Composition': init_composition_data
-}
+def serve_layout():
+    """
+    Create app layout on page load
+
+    Query data.world to process data, giving the initial data that is displayed.
+    "Initial" in this sense means the first dataset after loading the app; it is
+    the past 6 months of OurFish data. We also pull the full dataset which is
+    used to update components when filters are changed.
+
+    This initial data is then used to create the first visualizations, filter settings,
+    and download file.
+
+    The outputs (divs) are only updated using dash callbacks; when this function
+    runs again to create the divs, it is because the app has been rebooted.
+    """
+    global countries, snu, lgu, maa, comm, all_data, init_data
+    countries, snu, lgu, maa, comm, all_data, init_data = process_init_data()
+
+    map_div = start_map(init_data, comm)
+    filter_div = start_filters(all_data, countries)
+    plot_div, catch_data, cpue_value_data, length_data, composition_data = start_plot(init_data)
+    download_div = start_download_button()
+    highlights_div, highlights_data = start_highlights(init_data)
+
+    global download_data
+    download_data = {
+        'Totals': highlights_data,
+        'Catch': catch_data,
+        'CPUE-Value': cpue_value_data,
+        'Length': length_data,
+        'Composition': composition_data
+    }
+
+    return html.Div([
+        map_div,
+        filter_div,
+        plot_div,
+        download_div,
+        highlights_div
+    ])
+
+app.layout = serve_layout
 
 @app.callback(
-    Output(country_select_all, 'value'),
-    Output(country_input, 'value'),
-    Input(country_select_all, 'value'),
-    Input(country_input, 'value')
+    Output("country-select-all", 'value'),
+    Output("country-input", 'value'),
+    Input("country-select-all", 'value'),
+    Input("country-input", 'value')
 )
 def sync_country_select_all(all_selected, sel_country):
     """
@@ -107,16 +131,16 @@ def sync_country_select_all(all_selected, sel_country):
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     all_countries = list(countries['country_name'])
 
-    return sync_select_all(all_selected, country_input, sel_country, all_countries, triggered_id)
+    return sync_select_all(all_selected, "country-input", sel_country, all_countries, triggered_id)
 
 @app.callback(
-    Output(snu_select_all, 'value'),
-    Output(snu_input, 'options'),
-    Output(snu_input, 'value'),
-    Input(snu_select_all, 'value'),
-    Input(snu_input, 'value'),
-    Input(country_input, 'value'),
-    State(snu_input, 'options'),
+    Output("snu-select-all", 'value'),
+    Output("snu-input", 'options'),
+    Output("snu-input", 'value'),
+    Input("snu-select-all", 'value'),
+    Input("snu-input", 'value'),
+    Input("country-input", 'value'),
+    State("snu-input", 'options'),
 )
 def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict):
     """
@@ -138,7 +162,7 @@ def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict)
     all_snu_opt_dict = [{'label': s_name, 'value': s} for s_name, s in zip(all_snu_names, all_snu)]
     state_opt_snu = [d['value'] for d in state_opt_snu_dict]
 
-    if triggered_id == country_input.id:
+    if triggered_id == "country-input":
         # Update triggered by change to country selections
         if set(state_opt_snu) == set(sel_snu):
             # User has not removed any available SNU selections, so the new
@@ -156,17 +180,17 @@ def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict)
         # Update triggered by change to SNU value or 'Select all' checkbox.
         # If SNU value is the trigger, update the checkbox
         # If the checkbox is the trigger, update the SNU values
-        snu_all_selected, sel_snu = sync_select_all(snu_all_selected, snu_input, sel_snu, all_snu, triggered_id)
+        snu_all_selected, sel_snu = sync_select_all(snu_all_selected, "snu-input", sel_snu, all_snu, triggered_id)
         return snu_all_selected, all_snu_opt_dict, sel_snu
 
 @app.callback(
-    Output(lgu_select_all, 'value'),
-    Output(lgu_input, 'options'),
-    Output(lgu_input, 'value'),
-    Input(lgu_select_all, 'value'),
-    Input(lgu_input, 'value'),
-    Input(snu_input, 'value'),
-    State(lgu_input, 'options'),
+    Output("lgu-select-all", 'value'),
+    Output("lgu-input", 'options'),
+    Output("lgu-input", 'value'),
+    Input("lgu-select-all", 'value'),
+    Input("lgu-input", 'value'),
+    Input("snu-input", 'value'),
+    State("lgu-input", 'options'),
 )
 def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
     """
@@ -187,7 +211,7 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
     all_lgu_opt_dict = [{'label': l_name, 'value': l} for l_name, l in zip(all_lgu_names, all_lgu)]
     state_opt_lgu = [d['value'] for d in state_opt_lgu_dict]
 
-    if triggered_id == snu_input.id:
+    if triggered_id == "snu-input":
         if set(state_opt_lgu) == set(sel_lgu):
             lgu_all_selected = ['Select all'] if sel_snu != [] else []
             return lgu_all_selected, all_lgu_opt_dict, all_lgu
@@ -199,17 +223,17 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
             lgu_all_selected = ['Select all'] if set(keep_lgu) == set(all_lgu) else []
             return lgu_all_selected, all_lgu_opt_dict, keep_lgu
     else:
-        lgu_all_selected, sel_lgu = sync_select_all(lgu_all_selected, lgu_input, sel_lgu, all_lgu, triggered_id)
+        lgu_all_selected, sel_lgu = sync_select_all(lgu_all_selected, "lgu-input", sel_lgu, all_lgu, triggered_id)
         return lgu_all_selected, all_lgu_opt_dict, sel_lgu
 
 @app.callback(
-    Output(maa_select_all, 'value'),
-    Output(maa_input, 'options'),
-    Output(maa_input, 'value'),
-    Input(maa_select_all, 'value'),
-    Input(maa_input, 'value'),
-    Input(lgu_input, 'value'),
-    State(maa_input, 'options')
+    Output("maa-select-all", 'value'),
+    Output("maa-input", 'options'),
+    Output("maa-input", 'value'),
+    Input("maa-select-all", 'value'),
+    Input("maa-input", 'value'),
+    Input("lgu-input", 'value'),
+    State("maa-input", 'options')
 )
 def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
     ctx = callback_context
@@ -219,7 +243,7 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
     all_maa_opt_dict = [{'label': m_name, 'value': m} for m_name, m in zip(all_maa_names, all_maa)]
     state_opt_maa = [d['value'] for d in state_opt_maa_dict]
 
-    if triggered_id == lgu_input.id:
+    if triggered_id == "lgu-input":
         if set(state_opt_maa) == set(sel_maa):
             maa_all_selected = ['Select all'] if sel_lgu != [] else []
             return maa_all_selected, all_maa_opt_dict, all_maa
@@ -229,19 +253,19 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
             maa_all_selected = ['Select all'] if set(keep_maa) == set(all_maa) else []
             return maa_all_selected, all_maa_opt_dict, keep_maa
     else:
-        maa_all_selected, sel_maa = sync_select_all(maa_all_selected, maa_input, sel_maa, all_maa, triggered_id)
+        maa_all_selected, sel_maa = sync_select_all(maa_all_selected, "maa-input", sel_maa, all_maa, triggered_id)
         return maa_all_selected, all_maa_opt_dict, sel_maa
 
 @app.callback(
-    Output(catch_plot, 'figure'),
-    Output(cpue_value_plot, 'figure'),
-    Output(length_plot, 'figure'),
-    Output(composition_plot, 'figure'),
-    Output(highlights_div, 'children'),
-    Input(update_button, 'n_clicks'),
-    State(maa_input, 'value'),
-    State(daterange_input, 'start_date'),
-    State(daterange_input, 'end_date'),
+    Output("catches-plot", 'figure'),
+    Output("cpue-value-plot", 'figure'),
+    Output("length-plot", 'figure'),
+    Output("composition-plot", 'figure'),
+    Output("highlights-container", 'children'),
+    Input("update-button", 'n_clicks'),
+    State("maa-input", 'value'),
+    State("date-range-input", 'start_date'),
+    State("date-range-input", 'end_date'),
     prevent_initial_call = True
 )
 def update_plots(n_clicks, sel_maa, start_date, end_date):
@@ -277,30 +301,28 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         create_card(highlights_data.loc[0, 'female buyers'], "Total female buyers"),
     ]
 
-    global data
-
-    data['Totals'] = highlights_data
-    data['Catch'] = catch_data
-    data['CPUE-Value'] = cpue_value_data
-    data['Length'] = length_data
-    data['Composition'] = composition_data
+    download_data['Totals'] = highlights_data
+    download_data['Catch'] = catch_data
+    download_data['CPUE-Value'] = cpue_value_data
+    download_data['Length'] = length_data
+    download_data['Composition'] = composition_data
 
     return catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
 
 @app.callback(
-    Output(map, 'figure'),
-    Input(map, 'clickData'),
-    Input(update_button, 'n_clicks'),
-    State(maa_input, 'value'),
-    State(daterange_input, 'start_date'),
-    State(daterange_input, 'end_date'),
+    Output("fish-map", 'figure'),
+    Input("fish-map", 'clickData'),
+    Input("update-button", 'n_clicks'),
+    State("maa-input", 'value'),
+    State("date-range-input", 'start_date'),
+    State("date-range-input", 'end_date'),
     prevent_initial_call = True
 )
 def update_map(mapClickData, update_clicks, sel_maa, start_date, end_date):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if triggered_id == map.id:
+    if triggered_id == "fish-map":
         # zoom in on the point that was clicked
         sel_lat = mapClickData['points'][0]['lat']
         sel_lon = mapClickData['points'][0]['lon']
@@ -315,7 +337,7 @@ def update_map(mapClickData, update_clicks, sel_maa, start_date, end_date):
                 'zoom': 5
             }
         )
-    elif triggered_id == update_button.id:
+    elif triggered_id == "update-button":
         # Update points and fit the zoom to the filtered points
         start_date = datetime.date.fromisoformat(start_date)
         end_date = datetime.date.fromisoformat(end_date)
@@ -358,19 +380,19 @@ def toggle_plot_display(n_clicks):
 @app.callback(
     Output('download-data', 'data'),
     Input('btn-download', 'n_clicks'),
-    State(country_input, 'value'),
-    State(snu_input, 'value'),
-    State(lgu_input, 'value'),
-    State(maa_input, 'value'),
-    State(daterange_input, 'start_date'),
-    State(daterange_input, 'end_date'),
+    State("country-input", 'value'),
+    State("snu-input", 'value'),
+    State("lgu-input", 'value'),
+    State("maa-input", 'value'),
+    State("date-range-input", 'start_date'),
+    State("date-range-input", 'end_date'),
     prevent_initial_call = True
 )
 def trigger_download(n_clicks, sel_country, sel_snu, sel_lgu, sel_maa, start_date, end_date):
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine = 'xlsxwriter')
 
-    for d in data.items():
+    for d in download_data.items():
         # d: ('df_name', df)
         d[1].to_excel(writer, sheet_name = d[0], index = False)
 
