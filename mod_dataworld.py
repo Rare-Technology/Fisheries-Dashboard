@@ -45,11 +45,18 @@ def process_init_data():
     #        'species_scientific', 'species_local', 'is_focal', 'a', 'b', 'lmax'],
     #       dtype='object')
     # Takes approx 15s to get the query result
-    all_data = all_data.dropna(subset = ['ma_id']) # maybe add more in the future?
-    all_data = all_data.query("hide != True") # remove rows that are under review
-    all_data['date'] = all_data['date'].apply(datetime.date.fromisoformat)
-    all_data['yearmonth'] = all_data['date'].apply(lambda x: datetime.date(x.year, x.month, 1))
-    all_data['ma_id'] = all_data['ma_id'].astype(int)
+
+    # The next few lines trigger this warning
+    #   A value is trying to be set on a copy of a slice from a DataFrame.
+    #   Try using .loc[row_indexer,col_indexer] = value instead
+    # Even though I'm following their instructions?? Stack overflow said to use
+    # df.assign() but that increased memory usage a little bit
+    # These column assignments aren't causing any issue right now, so we're just
+    # going to hush the warnings so that the logs aren't clogged.
+    pd.set_option('mode.chained_assignment', None)
+    all_data.loc[:, 'date'] = all_data.loc[:,'date'].apply(datetime.date.fromisoformat)
+    all_data.loc[:,'yearmonth'] = all_data.loc[:,'date'].apply(lambda x: datetime.date(x.year, x.month, 1))
+    all_data.loc[:,'ma_id'] = all_data.loc[:,'ma_id'].astype(int)
 
     all_data = all_data.join(fishers.set_index('fisher_id'), on = 'fisher_id')
 

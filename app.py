@@ -1,10 +1,8 @@
-"date-range-input"# -*- coding: utf-8 -*-
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from mod_dataworld import process_init_data
 from utils_filters import sync_select_all
 from mod_filters import start_filters
-
 from utils_plot import (
     get_catch_data, make_catch_fig,
     get_cpue_value_data, make_cpue_value_fig,
@@ -12,7 +10,6 @@ from utils_plot import (
     get_composition_data, make_composition_fig
 )
 from mod_plot import start_plot
-
 from utils_map import get_map_data, make_map, mapbox_url
 from mod_map import start_map
 from utils_highlights import (
@@ -73,7 +70,6 @@ app.index_string = """
 </html>
 """
 server = app.server
-
 def serve_layout():
     """
     Create app layout on page load
