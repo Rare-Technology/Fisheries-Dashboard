@@ -3,3 +3,4 @@ secret.ini
 .DS_Store*
 .env
 *.pyc
+/venv
