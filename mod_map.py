@@ -14,8 +14,63 @@ def start_map(data, comm):
         config = {'displayModeBar': False},
         style = {"height": "calc(100vh)"}
     )
+    legend = html.Div(
+        id = "legend",
+        children = [
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box green"),
+                    html.Span("Subnational Government")
+                ]
+            ),
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box blue"),
+                    html.Span("Local Government Unit")
+                ]
+            ),
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box red"),
+                    html.Span("Established Managed Access Area")
+                ]
+            ),
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box grey"),
+                    html.Span("Proposed Managed Access Area")
+                ]
+            ),
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box yellow"),
+                    html.Span("Established Reserve")
+                ]
+            ),
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box orange"),
+                    html.Span("Proposed Reserve")
+                ]
+            ),
+            html.Div(
+                className = "line",
+                children = [
+                    html.Div(className = "box lightblue"),
+                    html.Span("Established Global MPAs")
+                ]
+            )
+        ]
+    )
+
     map_div = html.Div(
-        [map],
+        [map, legend],
         style = {
             "z-index": "1",
             "width": "100%",
