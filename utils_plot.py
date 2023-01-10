@@ -34,26 +34,33 @@ def get_catch_data(data):
     ).sum().reset_index()
 
 def get_cpue_value_data(data):
+    """
+    Calculate CPUE and "VPUE" (value per unit effort)
+    Unit effort is a boat (a group of fishers)
+    
+    (monthly) CPUE = (monthly catch weight) / (num boats)
+    (monthly) VPUE = (monthly catch value) / (num boats)
+                   
+    where a boat is represented by a unique fisher_id
+    """
     return data.assign(
         weight_kg = lambda x: 1e3*x['weight_mt']
     ).loc[:, [
-        # 'date',
         'yearmonth',
-        # 'fisher_id',
-        # 'ma_id', # restructure ma filtering to use id's -> use less memory, increase speed?
-        # 'fishbase_id',
+        'fisher_id',
         'weight_kg',
         'total_price_usd'
-    # ]].groupby(
-        # by = ['yearmonth', 'date', 'fisher_id', 'ma_id', 'fishbase_id'],
-        # dropna = False # do not remove rows where one of the grouping variables is NA
-    # )
-    # ]].sum().groupby(
+    ]].groupby(
+        by = ['yearmonth', 'fisher_id'],
+        dropna = False # do not remove rows where one of the grouping variables is NA
+    )
+    ]].sum().groupby(
     ]].groupby(
         by = ['yearmonth'],
     ).agg(
-        avg_cpue_kg_trip = ('weight_kg', 'mean'),
-        ste_cpue_kg_trip = ('weight_kg', 'sem'), # DataFrame.std() uses bias corrected stddev, pd.std does not
+        # Take averages and standard errors across boats each month
+        cpue_kg_boat = ('weight_kg', 'mean'),
+        ste_cpue_kg_boat = ('weight_kg', 'sem'), # DataFrame.std() uses bias corrected stddev, pd.std does not
         avg_catch_value_usd = ('total_price_usd', 'mean'),
         ste_catch_value_usd = ('total_price_usd', 'sem')
     ).reset_index()
@@ -161,8 +168,8 @@ def make_cpue_value_fig(cpue_value_data):
     fig.add_trace(
         go.Scatter(
             x = cpue_value_data['yearmonth'],
-            y = cpue_value_data['avg_cpue_kg_trip'],
-            name = 'CPUE (kg/trip)',
+            y = cpue_value_data['cpue_kg_boat'],
+            name = 'CPUE (kg/boat)',
             marker_color = COLORS['rare-blue'],
             yaxis = 'y'
         ), secondary_y = False
@@ -171,13 +178,13 @@ def make_cpue_value_fig(cpue_value_data):
         go.Scatter(
             x = cpue_value_data['yearmonth'],
             y = cpue_value_data['avg_catch_value_usd'],
-            name = 'Catch Value (USD/trip)',
+            name = 'Catch Value (USD/boat)',
             marker_color = COLORS['secondary-red'],
             yaxis = 'y2'
         ), secondary_y = True
     )
     fig.update_layout(
-        title = 'Average CPUE and Catch Value per Trip',
+        title = 'CPUE and Catch Value per Boat',
         xaxis_title = '',
         yaxis = {
             'titlefont': {
