@@ -5,17 +5,10 @@ import numpy as np
 import json
 import datetime
 
-### TODO:
-# Compile list of demo accounts (typically buyers I think)
-# Filter out transactions with these accounts
-# demoMAR
-
-def process_init_data():
-    # TODO figure out what needs to be returned and how to make the other files
-    # that import from here work (mod_higlights, mod_plot, mod_filters, mod_map)
-    # Pull data from data.world and clean it a bit. Will have to call this
-    # on every page load, so probably will go into serve_layout() from app.py
-
+def get_ourfish_data():
+    """
+    Pull full OurFish and fishers data from data.world. Return the OF data
+    """
     fishers = pd.read_csv('https://query.data.world/s/q4i5ndlwyhoqkcjpfee5buncfu5icn')
     fishers = fishers[['fisher_id', 'gender']].drop_duplicates()
     # >>> fishers.head()
@@ -60,6 +53,18 @@ def process_init_data():
 
     all_data = all_data.join(fishers.set_index('fisher_id'), on = 'fisher_id')
 
+    return all_data
+
+def get_geo_data(all_data):
+    """
+    Use `all_data` to return a dictionary of tables related to geography:
+
+    - countries
+    - snu: Subnational units
+    - lgu: Local government units
+    - maa: Managed access areas
+    - comm: Communities
+    """
     countries = all_data[['country_id', 'country']].drop_duplicates().rename(
         {'country': 'country_name'}, axis = 1
     ).reset_index(drop = True)
@@ -79,16 +84,12 @@ def process_init_data():
     comm = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'community_id', 'community_name', 'community_lat', 'community_lon', 'population']].drop_duplicates().reset_index(drop = True)
     comm = comm.query("~community_lat.isna() & ~community_lon.isna()")
 
-    # choose start and end dates to initially show the past 6 months of data
-    end_date = all_data['date'].max()
-    if end_date.month >= 6:
-        start_date = datetime.date(end_date.year, end_date.month - 5, 1)
-    else:
-        start_date = datetime.date(end_date.year - 1, end_date.month + 7, 1)
-    init_data = all_data.query(
-        "ma_id.isin(list(@maa['ma_id'])) & \
-        @start_date <= date & \
-        date <= @end_date"
-    )
-
-    return countries, snu, lgu, maa, comm, all_data, init_data
+    tables = {
+        "country": countries,
+        "snu": snu,
+        "lgu": lgu,
+        "maa": maa,
+        "comm": comm
+    }
+    
+    return tables

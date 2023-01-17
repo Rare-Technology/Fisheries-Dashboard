@@ -1,6 +1,6 @@
 from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
-from mod_dataworld import process_init_data
+from mod_dataworld import get_ourfish_data, get_geo_data
 from utils_filters import sync_select_all
 from mod_filters import start_filters
 from utils_plot import (
@@ -21,6 +21,8 @@ from mod_download import start_download_button
 import datetime
 import io
 import pandas as pd
+from flask_caching import Cache
+import uuid
 
 # Importing bootstrap 4; Why 4 and not 5? The hover on v4's buttons is better! The change in color
 # is actually noticeable. v5's buttons (the lighter colors) you can't even tell if there's
@@ -69,6 +71,61 @@ app.index_string = """
     </footer>
 </html>
 """
+# To avoid using global variables, which dash does not behave well with, we use caching
+# to share data between callbacks. This sets up a redis database on the server, where 
+# data is cached and pulled from.
+# For more details, see https://dash.plotly.com/sharing-data-between-callbacks
+# We are using Ex 4, the solution for caching user-based session data on the server.
+# Ex 1 can also cache user-based session data but on the client side, which for
+# our audience we will not do.
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'redis',
+    'CACHE_TYPE': 'filesystem',
+    'CACHE_DIR': 'cache-directory',
+    'CACHE_THRESHOLD': 200 # subject to change
+})
+
+# User opens app and initial query to data.world is performed
+# The query output is memoized using the session id, so each user
+# will have their initial data cached.
+@cache.memoize()
+def query_ourfish_data(session_id):
+    all_data = get_ourfish_data()
+    return all_data
+
+@cache.memoize()
+def query_geo_data(session_id):
+    all_data = query_ourfish_data(session_id) # from cache
+    geo = get_geo_data(all_data)
+    return geo
+
+@cache.memoize()
+def apply_filters(session_id, sel_maa, start_date, end_date):
+    """
+    Pull full cached DW dataset then filter it. Compute and return data for plots, highlights, and map.
+    The output is memoized according to the unique user and filters.
+    Notice we don't return the filtered data -- ultimately what we care about pulling from cache
+    is not the filtered data but the numbers we get from processing that filtered data. That is
+    what actually goes on the plots, map, highlights, and download file.
+    """
+    all_data = query_ourfish_data(session_id) # from cache
+    filtered_data = all_data.query(
+        "ma_id.isin(list(@sel_maa)) & \
+        @start_date <= date & \
+        date <= @end_date"
+    )
+    geo = query_geo_data(session_id) # from cache
+
+    output_data = {}
+    output_data["map"] = get_map_data(filtered_data, geo["comm"])
+    output_data["catch"] = get_catch_data(filtered_data)
+    output_data["cpue-value"] = get_cpue_value_data(filtered_data)
+    output_data["length"] = get_length_data(filtered_data)
+    output_data["composition"] = get_composition_data(filtered_data)
+    output_data["highlights"] = get_highlights_data(filtered_data)
+
+    return output_data
+
 server = app.server
 def serve_layout():
     """
@@ -85,25 +142,38 @@ def serve_layout():
     The outputs (divs) are only updated using dash callbacks; when this function
     runs again to create the divs, it is because the app has been rebooted.
     """
-    global countries, snu, lgu, maa, comm, all_data, init_data
-    countries, snu, lgu, maa, comm, all_data, init_data = process_init_data()
+    session_id = str(uuid.uuid4())
 
-    map_div = start_map(init_data, comm)
-    filter_div = start_filters(all_data, countries)
-    plot_div, catch_data, cpue_value_data, length_data, composition_data = start_plot(init_data)
+    all_data = query_ourfish_data(session_id)
+    geo = query_geo_data(session_id)
+    countries = geo["country"]
+    snu = geo["snu"]
+    lgu = geo["lgu"]
+    maa = geo["maa"]
+    comm = geo["comm"]
+    
+    # choose start and end dates to initially show the past 6 months of data
+    end_date = all_data['date'].max()
+    if end_date.month >= 6:
+        start_date = datetime.date(end_date.year, end_date.month - 5, 1)
+    else:
+        start_date = datetime.date(end_date.year - 1, end_date.month + 7, 1)
+    
+    output_data = apply_filters(session_id, maa["ma_id"], start_date, end_date)
+    plot_data = {k: output_data[k] for k in ["catch", "cpue-value", "length", "composition"]}
+
+    # Min/max dates to show on calendar
+    min_date = all_data["date"].min()
+    max_date = end_date
+
+    map_div = start_map(output_data["map"], comm)
+    filter_div = start_filters(min_date, max_date, countries)
+    plot_div = start_plot(plot_data)
     download_div = start_download_button()
-    highlights_div, highlights_data = start_highlights(init_data)
-
-    global download_data
-    download_data = {
-        'Totals': highlights_data,
-        'Catch': catch_data,
-        'CPUE-Value': cpue_value_data,
-        'Length': length_data,
-        'Composition': composition_data
-    }
+    highlights_div = start_highlights(output_data["highlights"])
 
     return html.Div([
+        html.Div(session_id, id="session-id", style={"display": "none"}),
         map_div,
         filter_div,
         plot_div,
@@ -117,12 +187,14 @@ app.layout = serve_layout
     Output("country-select-all", 'value'),
     Output("country-input", 'value'),
     Input("country-select-all", 'value'),
-    Input("country-input", 'value')
+    Input("country-input", 'value'),
+    State("session-id", "children")
 )
-def sync_country_select_all(all_selected, sel_country):
+def sync_country_select_all(all_selected, sel_country, session_id):
     """
     Sync country selections with 'select all' checkbox
     """
+    countries = query_geo_data(session_id)["country"]
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     all_countries = list(countries['country_name'])
@@ -137,8 +209,9 @@ def sync_country_select_all(all_selected, sel_country):
     Input("snu-input", 'value'),
     Input("country-input", 'value'),
     State("snu-input", 'options'),
+    State("session-id", "children")
 )
-def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict):
+def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict, session_id):
     """
     This callback will handle the following events:
 
@@ -150,6 +223,8 @@ def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict)
         (a) if 'Select all' checkbox changes, update SNU selections accordingly
         (b) if SNU selections change, update 'Select all' checkbox accordingly
     """
+    countries = query_geo_data(session_id)["country"]
+    snu = query_geo_data(session_id)["snu"]
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     sel_country = list(countries.query("country_name.isin(@sel_country_names)")['country_id'])
@@ -187,8 +262,9 @@ def update_snu(snu_all_selected, sel_snu, sel_country_names, state_opt_snu_dict)
     Input("lgu-input", 'value'),
     Input("snu-input", 'value'),
     State("lgu-input", 'options'),
+    State("session-id", "children")
 )
-def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
+def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict, session_id):
     """
     This callback will handle the following events:
 
@@ -200,6 +276,7 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
         (a) if 'Select all' checkbox changes, update LGU selections accordingly
         (b) if LGU selections change, update 'Select all' checkbox accordingly
     """
+    lgu = query_geo_data(session_id)["lgu"]
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     all_lgu = list(lgu.query("snu_id.isin(@sel_snu)")['lgu_id'])
@@ -229,9 +306,11 @@ def update_lgu(lgu_all_selected, sel_lgu, sel_snu, state_opt_lgu_dict):
     Input("maa-select-all", 'value'),
     Input("maa-input", 'value'),
     Input("lgu-input", 'value'),
-    State("maa-input", 'options')
+    State("maa-input", 'options'),
+    State("session-id", "children")
 )
-def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
+def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict, session_id):
+    maa = query_geo_data(session_id)["maa"]
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     all_maa = list(maa.query("lgu_id.isin(@sel_lgu)")['ma_id'])
@@ -259,35 +338,26 @@ def update_maa(maa_all_selected, sel_maa, sel_lgu, state_opt_maa_dict):
     Output("composition-plot", 'figure'),
     Output("highlights-container", 'children'),
     Input("update-button", 'n_clicks'),
-    State("maa-input", 'value'),
-    State("date-range-input", 'start_date'),
-    State("date-range-input", 'end_date'),
+    State("session-id", "children"),
+    State("maa-input", "value"),
+    State("date-range-input", "start_date"),
+    State("date-range-input", "end_date"),
     prevent_initial_call = True
 )
-def update_plots(n_clicks, sel_maa, start_date, end_date):
+def update_plots(n_clicks, session_id, sel_maa, start_date, end_date):
     start_date = datetime.date.fromisoformat(start_date)
     end_date = datetime.date.fromisoformat(end_date)
 
-    filter_data = all_data.query(
-        "ma_id.isin(list(@sel_maa)) & \
-        @start_date <= date & \
-        date <= @end_date"
-    )
+    # I THINK this callback runs first instead of update_map, so running apply_filters
+    # here will calculate the new output data then cache it.
+    output_data = apply_filters(session_id, sel_maa, start_date, end_date)
 
-    catch_data = get_catch_data(filter_data)
-    catch_fig = make_catch_fig(catch_data)
+    catch_fig = make_catch_fig(output_data["catch"])
+    cpue_value_fig = make_cpue_value_fig(output_data["cpue-value"])
+    length_fig = make_length_fig(output_data["length"])
+    composition_fig = make_composition_fig(output_data["composition"])
 
-    cpue_value_data = get_cpue_value_data(filter_data)
-    cpue_value_fig = make_cpue_value_fig(cpue_value_data)
-
-    length_data = get_length_data(filter_data)
-    length_fig = make_length_fig(length_data)
-
-    composition_data = get_composition_data(filter_data)
-    composition_fig = make_composition_fig(composition_data)
-
-    highlights_data = get_highlights_data(filter_data)
-
+    highlights_data = output_data["highlights"]
     highlights_children = [
         create_card(highlights_data.loc[0, 'weight'], "Total weight (mt)"),
         create_card(highlights_data.loc[0, 'value'], "Total value (USD)"),
@@ -297,28 +367,25 @@ def update_plots(n_clicks, sel_maa, start_date, end_date):
         create_card(highlights_data.loc[0, 'female buyers'], "Total female buyers"),
     ]
 
-    download_data['Totals'] = highlights_data
-    download_data['Catch'] = catch_data
-    download_data['CPUE-Value'] = cpue_value_data
-    download_data['Length'] = length_data
-    download_data['Composition'] = composition_data
-
     return catch_fig, cpue_value_fig, length_fig, composition_fig, highlights_children
 
 @app.callback(
     Output("fish-map", 'figure'),
     Input("fish-map", 'clickData'),
     Input("update-button", 'n_clicks'),
+    State("session-id", "children"),
     State("maa-input", 'value'),
     State("date-range-input", 'start_date'),
     State("date-range-input", 'end_date'),
     prevent_initial_call = True
 )
-def update_map(mapClickData, update_clicks, sel_maa, start_date, end_date):
+def update_map(mapClickData, update_clicks, session_id, sel_maa, start_date, end_date):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if triggered_id == "fish-map":
+        # TODO update this. There used to be a map dcc.Graph object imported from mod_map that
+        # would work with the code here.
         # zoom in on the point that was clicked
         sel_lat = mapClickData['points'][0]['lat']
         sel_lon = mapClickData['points'][0]['lon']
@@ -338,13 +405,10 @@ def update_map(mapClickData, update_clicks, sel_maa, start_date, end_date):
         start_date = datetime.date.fromisoformat(start_date)
         end_date = datetime.date.fromisoformat(end_date)
 
-        filter_data = all_data.query(
-            "ma_id.isin(list(@sel_maa)) & \
-            @start_date <= date & \
-            date <= @end_date"
-        )
+        # Pull map data from cache; I think the update_plots callback goes first so the output data
+        # has already been updated and cached.
+        map_data = apply_filters(session_id, sel_maa, start_date, end_date)["map"]
 
-        map_data = get_map_data(filter_data, comm)
         fig = make_map(map_data, mapbox_url)
 
     return fig
@@ -376,6 +440,7 @@ def toggle_plot_display(n_clicks):
 @app.callback(
     Output('download-data', 'data'),
     Input('btn-download', 'n_clicks'),
+    State("session-id", "children"),
     State("country-input", 'value'),
     State("snu-input", 'value'),
     State("lgu-input", 'value'),
@@ -384,17 +449,36 @@ def toggle_plot_display(n_clicks):
     State("date-range-input", 'end_date'),
     prevent_initial_call = True
 )
-def trigger_download(n_clicks, sel_country, sel_snu, sel_lgu, sel_maa, start_date, end_date):
+def trigger_download(n_clicks, session_id, sel_country, sel_snu, sel_lgu, sel_maa, start_date, end_date):
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine = 'xlsxwriter')
 
-    for d in download_data.items():
+    start_date = datetime.date.fromisoformat(start_date)
+    end_date = datetime.date.fromisoformat(end_date)
+
+    # Pull the cached filtered data
+    output_data = apply_filters(session_id, sel_maa, start_date, end_date)
+
+    sheet_names = {
+        "highlights": "Totals",
+        "catch": "Catches",
+        "cpue-value": "CPUE-Value",
+        "length": "Length",
+        "composition": "Catch composition",
+        "map": "Communities"
+    }
+    
+    for d in output_data.items():
         # d: ('df_name', df)
-        d[1].to_excel(writer, sheet_name = d[0], index = False)
+        d[1].to_excel(writer, sheet_name = sheet_names[d[0]], index = False)
 
     # Before finishing, we'll add metadata. And before that, we need names for geographic info,
     # not just the id's
 
+    geo = query_geo_data(session_id)
+    snu = geo["snu"]
+    lgu = geo["lgu"]
+    maa = geo["maa"]
     snu_names = list(snu.query("snu_id.isin(@sel_snu)")['snu_name'])
     lgu_names = list(lgu.query("lgu_id.isin(@sel_lgu)")['lgu_name'])
     maa_names = list(maa.query("ma_id.isin(@sel_maa)")['ma_name'])

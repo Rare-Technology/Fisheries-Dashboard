@@ -4,3 +4,4 @@ secret.ini
 .env
 *.pyc
 /venv
+/cache-directory

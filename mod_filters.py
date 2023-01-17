@@ -4,7 +4,7 @@ import datetime
 ##### TODO figure out how to either (1) limit the amount of selectted options displayed or
 ##### (2) find a different dropdown selection similar to ones on FMA tool
 ### Country selection
-def start_filters(all_data, countries):
+def start_filters(min_date, max_date, countries):
     country_input = dcc.Dropdown(id = 'country-input',
         options = list(countries['country_name']),
         value = list(countries['country_name']),
@@ -76,8 +76,6 @@ def start_filters(all_data, countries):
         maa_input
     ])
 
-    min_date = all_data['date'].min()
-    max_date = all_data['date'].max()
     if max_date.month >= 6:
         start_date = datetime.date(max_date.year, max_date.month - 5, 1)
     else:

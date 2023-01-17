@@ -1,11 +1,9 @@
 import plotly.graph_objects as go
 import plotly.express as px
 from dash import dcc, html
-from utils_map import get_map_data, make_map, mapbox_url
+from utils_map import make_map, mapbox_url
 
-def start_map(data, comm):
-    map_data = get_map_data(data, comm)
-
+def start_map(map_data, comm):
     fig = make_map(map_data, mapbox_url)
 
     map = dcc.Graph(

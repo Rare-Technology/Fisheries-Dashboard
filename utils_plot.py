@@ -53,9 +53,7 @@ def get_cpue_value_data(data):
     ]].groupby(
         by = ['yearmonth', 'fisher_id'],
         dropna = False # do not remove rows where one of the grouping variables is NA
-    )
-    ]].sum().groupby(
-    ]].groupby(
+    ).sum().groupby(
         by = ['yearmonth'],
     ).agg(
         # Take averages and standard errors across boats each month

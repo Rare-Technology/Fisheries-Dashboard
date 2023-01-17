@@ -1,15 +1,14 @@
 from dash import dcc, html
 import datetime
 from utils_plot import (
-    get_catch_data, make_catch_fig,
-    get_cpue_value_data, make_cpue_value_fig,
-    get_length_data, make_length_fig,
-    get_composition_data, make_composition_fig
+    make_catch_fig,
+    make_cpue_value_fig,
+    make_length_fig,
+    make_composition_fig
 )
 
-def start_plot(init_data):
-    catch_data = get_catch_data(init_data)
-    catch_fig = make_catch_fig(catch_data)
+def start_plot(plot_data):
+    catch_fig = make_catch_fig(plot_data["catch"])
     catch_plot = dcc.Graph(
         id = 'catches-plot',
         className = "mb-4",
@@ -20,8 +19,7 @@ def start_plot(init_data):
         }
     )
 
-    cpue_value_data = get_cpue_value_data(init_data)
-    cpue_value_fig = make_cpue_value_fig(cpue_value_data)
+    cpue_value_fig = make_cpue_value_fig(plot_data["cpue-value"])
     cpue_value_plot = dcc.Graph(
         id = 'cpue-value-plot',
         className = "mb-4",
@@ -32,8 +30,7 @@ def start_plot(init_data):
         }
     )
 
-    length_data = get_length_data(init_data)
-    length_fig = make_length_fig(length_data)
+    length_fig = make_length_fig(plot_data["length"])
     length_plot = dcc.Graph(
         id = 'length-plot',
         # className = "pretty_container",
@@ -44,8 +41,7 @@ def start_plot(init_data):
         }
     )
 
-    composition_data = get_composition_data(init_data)
-    composition_fig = make_composition_fig(composition_data)
+    composition_fig = make_composition_fig(plot_data["composition"])
     composition_plot = dcc.Graph(
         id = 'composition-plot',
         className = "mb-4",
@@ -81,4 +77,4 @@ def start_plot(init_data):
         children = [plot_toggle_div, plot_displays_div]
     )
 
-    return plot_div, catch_data, cpue_value_data, length_data, composition_data
+    return plot_div
