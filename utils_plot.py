@@ -135,7 +135,7 @@ def get_composition_data(data):
         .groupby(["species_scientific"])
         .agg({
             "is_focal": "max", # basically, the identity; is_focal is unique per species
-            "species_local": lambda x: "/".join(x),
+            "species_local": lambda x: "/".join(np.unique(x)),
             "weight_mt": "sum"
         })
         .reset_index()
