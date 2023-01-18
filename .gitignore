@@ -1,6 +1,7 @@
 __pycache__*
+.ipynb_checkpoints
 secret.ini
-.DS_Store*
+**/.DS_Store
 .env
 *.pyc
 /venv

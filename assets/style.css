@@ -338,3 +338,7 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
 .mapboxgl-ctrl-attrib {
   display: none;
 }
+
+.modebar {
+  right: 20px !important;
+}

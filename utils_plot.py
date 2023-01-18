@@ -126,13 +126,18 @@ def get_composition_data(data):
     # has a bug in the SQL code that double counts the weight any species that are non-focal
     return (data
         .loc[:, [
-            'family_scientific', # for later...
-            'species_local',
-            'is_focal',
-            'species_scientific',
-            'weight_mt'
+            "family_scientific", # for later...
+            "species_local",
+            "is_focal",
+            "species_scientific",
+            "weight_mt"
         ]]
-        .groupby(['is_focal', 'species_local', 'species_scientific']).sum()
+        .groupby(["species_scientific"])
+        .agg({
+            "is_focal": "max", # basically, the identity; is_focal is unique per species
+            "species_local": lambda x: "/".join(x),
+            "weight_mt": "sum"
+        })
         .reset_index()
         .sort_values(
             by = ['weight_mt'],
@@ -280,9 +285,6 @@ def make_composition_fig(comp_data):
         )
     )
 
-    fig.update_layout(
-        title = "Catch Composition (Top 10, metric tons)",
-        legend = {'orientation': 'h'}
-    )
+    fig.update_layout(title = "Catch Composition (Top 10, metric tons)")
 
     return fig
