@@ -40,7 +40,7 @@ def start_map(map_data, comm):
                 className = "line",
                 children = [
                     html.Div(className = "box grey"),
-                    html.Span("Proposed Managed Access Area")
+                    html.Span("Proposed/Recommended Managed Access Area")
                 ]
             ),
             html.Div(
@@ -54,7 +54,7 @@ def start_map(map_data, comm):
                 className = "line",
                 children = [
                     html.Div(className = "box orange"),
-                    html.Span("Proposed Reserve")
+                    html.Span("Proposed/Recommended Reserve")
                 ]
             ),
             html.Div(
