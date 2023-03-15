@@ -283,6 +283,7 @@ See https://github.com/Farkites/where_to_live/blob/main/assets/style.css */
   position: absolute;
   bottom: 0;
   right: 3%;
+  left: 77%;
   z-index: 1000;
   background-color: white;
   border-radius: 10px;
