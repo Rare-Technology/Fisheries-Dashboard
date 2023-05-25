@@ -33,7 +33,7 @@ def get_fishers(data):
 
 
 def get_female(data):
-    return data.query("gender.isin(['f', 'F'])")['buyer_id'].nunique()
+    return data.query("buyer_gender==2")['buyer_id'].nunique()
 
 
 def get_buyers(data):

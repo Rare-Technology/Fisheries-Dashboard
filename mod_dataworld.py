@@ -7,36 +7,29 @@ import datetime
 
 def get_ourfish_data():
     """
-    Pull full OurFish and fishers data from data.world. Return the OF data
-    """
-    fishers = pd.read_csv('https://query.data.world/s/q4i5ndlwyhoqkcjpfee5buncfu5icn')
-    fishers = fishers[['fisher_id', 'gender']].drop_duplicates()
-    # >>> fishers.head()
-    #            fisher_id gender
-    # 0  CN-MR-001978-2015      m
-    # 1  CN-MR-001965-2015      m
-    # 2  CN-MR-001967-2015      m
-    # 3  CN-MR-001972-2015      m
-    # 4  CN-MR-001962-2015      f
+    Pull full OurFish data from data.world. Return the OF data.
 
-    all_data = pd.read_csv('https://query.data.world/s/43qwgxsrhlmxvpumqqb3wifgfmawsa')
-    # all_data = pd.read_csv('all_data.csv')
+    Data source: join_ourfish_footprint_fishbase from https://data.world/rare/ourfish
+    """
+    all_data = pd.read_csv('https://query.data.world/s/mlrbseaz6qipapni2wh7bp6m6eqkv2?dws=00000')
     # >>> all_data.head()
-    #                                      id        date  country_id  snu_id  ...  is_focal         a         b        lmax
-    # 0  a1b2aa7d-e07d-4284-a0fc-47956e66578e  2020-01-07           5      14  ...         0  0.027600  2.920000   45.700001
-    # 1  b32fb39a-4ae6-4c85-a946-50ed01c59748  2020-01-12           5      14  ...         1  0.024838  2.908650   69.699997
-    # 2  ab716c01-63dc-4d8d-8025-e072219683cf  2021-06-22           5      14  ...         1  4.030300  2.255100         NaN
-    # 3  2b2770e4-2a1c-4280-8ab4-a7278b018a14  2019-08-23           5      14  ...         1  0.010241  2.951254  104.000000
-    # 4  4459de6a-03ab-413c-bb3c-81f45156ea4f  2020-10-29           5      14  ...         0  0.026400  2.860000   46.000000
+    #                                          id        date  country_id  snu_id  ...         a         b   lmax hide
+    # 0  8be7aa9a-58ef-4972-950d-dd33cff6cd1c  2020-03-17           6     143  ...  0.004262  3.325280    7.6  NaN
+    # 1  02910cce-7508-4a92-9d20-d68af3321f9f  2020-03-02           6     143  ...       NaN       NaN    NaN  NaN
+    # 2  3a0d62c8-672d-413a-a652-a7a78a7c28dd  2021-04-11           6     145  ...  0.024523  2.949499   69.0  NaN
+    # 3  56a6ed9c-5dcf-46f8-bb0c-4957f46942e8  2022-09-19           7      25  ...  0.010241  2.951254  104.0  NaN
+    # 4  0d4787fd-aed8-41d9-a683-090d2b9c7885  2022-11-28           7      25  ...  0.010241  2.951254  104.0  NaN    # >>> all_data.columns
+    # [5 rows x 39 columns]
     # >>> all_data.columns
     # Index(['id', 'date', 'country_id', 'snu_id', 'lgu_id', 'community_id',
-    #        'country', 'snu_name', 'lgu_name', 'community_name', 'buyer_id',
-    #        'fisher_id', 'gear_type', 'ma_id', 'ma_name', 'ma_lat', 'ma_lon',
-    #        'population', 'community_lat', 'community_lon', 'est_buyers',
-    #        'est_fishers', 'label', 'buying_unit', 'fishbase_id', 'weight_mt',
-    #        'count', 'total_price_usd', 'family_scientific', 'family_local',
-    #        'species_scientific', 'species_local', 'is_focal', 'a', 'b', 'lmax'],
-    #       dtype='object')
+    #    'country', 'snu_name', 'lgu_name', 'community_name', 'ma_id', 'ma_name',
+    #    'ma_lat', 'ma_lon', 'population', 'community_lat', 'community_lon',
+    #    'est_buyers', 'est_fishers', 'buyer_id', 'buyer_name', 'buyer_gender',
+    #    'fisher_id', 'buying_unit', 'fishbase_id', 'weight_kg', 'weight_lbs',
+    #    'count', 'total_price_local', 'total_price_usd', 'family_scientific',
+    #    'family_local', 'species_scientific', 'species_local', 'is_focal', 'a',
+    #    'b', 'lmax', 'hide'],
+    #   dtype='object')   
     # Takes approx 15s to get the query result
 
     # The next few lines trigger this warning
@@ -47,11 +40,16 @@ def get_ourfish_data():
     # These column assignments aren't causing any issue right now, so we're just
     # going to hush the warnings so that the logs aren't clogged.
     pd.set_option('mode.chained_assignment', None)
+    all_data = all_data.query("~date.isna()")
     all_data.loc[:, 'date'] = all_data.loc[:,'date'].apply(datetime.date.fromisoformat)
     all_data.loc[:,'yearmonth'] = all_data.loc[:,'date'].apply(lambda x: datetime.date(x.year, x.month, 1))
+    # Thu May 25 2023
+    # Using a new table now but it has 742 missing ma_id's that were not in the previous dataset.
+    # George looking into this, for now we are taking these out but ideally this next line won't be needed after
+    all_data = all_data.query("~ma_id.isna()") 
     all_data.loc[:,'ma_id'] = all_data.loc[:,'ma_id'].astype(int)
 
-    all_data = all_data.join(fishers.set_index('fisher_id'), on = 'fisher_id')
+    all_data["weight_mt"] = all_data.loc[:, "weight_kg"]/1e3
 
     return all_data
 
@@ -79,6 +77,7 @@ def get_geo_data(all_data):
     maa = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'ma_name', 'ma_lat', 'ma_lon']].drop_duplicates().reset_index(drop = True)
     maa['ma_lat'] = maa['ma_lat'].fillna(0)
     maa['ma_lon'] = maa['ma_lon'].fillna(0)
+    maa["ma_name"] = maa["ma_name"].fillna("Unspecified")
     maa = maa.dropna()
 
     comm = all_data[['country_id', 'snu_id', 'lgu_id', 'ma_id', 'community_id', 'community_name', 'community_lat', 'community_lon', 'population']].drop_duplicates().reset_index(drop = True)
